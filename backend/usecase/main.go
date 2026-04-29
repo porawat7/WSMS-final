@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"workspaces/WSMS-final/domain"
+	"backend/domain"
 )
 
 type courseUsecase struct {
@@ -19,4 +19,18 @@ func (u *courseUsecase) FetchAllCourses() ([]domain.Course, error) {
 
 func (u *courseUsecase) FetchCourseDetails(id int) (domain.Course, error) {
 	return u.repo.GetCourseByID(id)
+}
+func (u *courseUsecase) AddCourse(course domain.Course) error {
+	return u.repo.CreateCourse(course)
+}
+
+func (u *courseUsecase) EditCourse(id int, course domain.Course) error {
+	return u.repo.UpdateCourse(id, course)
+}
+
+func (u *courseUsecase) RemoveCourse(id int) error {
+	return u.repo.DeleteCourse(id)
+}
+func (u *courseUsecase) FetchCoursesByCategory(category string) ([]domain.Course, error) {
+	return u.repo.GetCoursesByCategory(category)
 }

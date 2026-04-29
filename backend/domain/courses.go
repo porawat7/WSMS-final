@@ -17,10 +17,19 @@ type Course struct {
 type CourseRepository interface {
 	GetAllCourses() ([]Course, error)
 	GetCourseByID(id int) (Course, error)
+	CreateCourse(course Course) error
+	UpdateCourse(id int, course Course) error
+	DeleteCourse(id int) error
+	GetCoursesByCategory(category string) ([]Course, error)
 }
 
 // CourseUsecase defines the interface for course business logic.
 type CourseUsecase interface {
 	FetchAllCourses() ([]Course, error)
 	FetchCourseDetails(id int) (Course, error)
+	FetchCoursesByCategory(category string) ([]Course, error)
+
+	AddCourse(course Course) error
+	EditCourse(id int, course Course) error
+	RemoveCourse(id int) error
 }
