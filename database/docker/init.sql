@@ -4,6 +4,8 @@ CREATE TABLE users (
   name VARCHAR(255),
   email VARCHAR(255) UNIQUE,
   password VARCHAR(255),
+  status VARCHAR(255),
+  numrequest int,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -40,9 +42,9 @@ VALUES
 ('UI Design Masterclass', 'Design', 4000, 'ออกแบบ UI ระดับมืออาชีพ', 'Meet', 'https://meet.google.com/3', '2026-06-20', '19:00-22:00');
 
 -- USERS
-INSERT INTO users (name, email, password) VALUES
-('User One', 'user1@example.com', '123456'),
-('User Two', 'user2@example.com', '123456');
+INSERT INTO users (name, email, password,status,numrequest) VALUES
+('User One', 'user1@example.com', '123456', 'basic',0),
+('User Two', 'user2@example.com', '123456', 'basic',0);
 
 -- ADMINS
 INSERT INTO admins (name, email, password) VALUES
