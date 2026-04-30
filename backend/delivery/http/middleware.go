@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -81,7 +82,7 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		key := r.Header.Get("X-API-Key")
+		key := strings.TrimSpace(r.Header.Get("x-api-key"))
 		if key == "" {
 			http.Error(w, "Missing API Key", http.StatusUnauthorized)
 			return
