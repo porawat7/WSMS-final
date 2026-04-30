@@ -1,15 +1,24 @@
 package usecase
 
-import "backend/repository"
+import "backend/domain"
 
-type CourseUsecase struct {
-	repo *repository.CourseRepository
+type CourseRepository interface {
+	GetAllCourses() ([]domain.Course, error)
+	GetByCategoryID(categoryID int) ([]domain.Course, error)
 }
 
-func NewCourseUsecase(r *repository.CourseRepository) *CourseUsecase {
+type CourseUsecase struct {
+	repo CourseRepository
+}
+
+func NewCourseUsecase(r CourseRepository) *CourseUsecase {
 	return &CourseUsecase{repo: r}
 }
 
-func (u *CourseUsecase) GetAllCourses() ([]map[string]interface{}, error) {
+func (u *CourseUsecase) GetAllCourses() ([]domain.Course, error) {
 	return u.repo.GetAllCourses()
+}
+
+func (u *CourseUsecase) GetByCategoryID(id int) ([]domain.Course, error) {
+	return u.repo.GetByCategoryID(id)
 }

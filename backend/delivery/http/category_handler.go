@@ -1,9 +1,10 @@
 package http
 
 import (
-	"backend/usecase"
 	"encoding/json"
 	"net/http"
+
+	"backend/usecase"
 )
 
 type CategoryHandler struct {
@@ -17,7 +18,7 @@ func NewCategoryHandler(u *usecase.CategoryUsecase) *CategoryHandler {
 func (h *CategoryHandler) GetAllCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.usecase.GetAllCategories()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
 		return
 	}
 

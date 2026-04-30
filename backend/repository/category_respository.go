@@ -8,36 +8,33 @@ type Category struct {
 }
 
 type CategoryRepository struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewCategoryRepository(db *sql.DB) *CategoryRepository {
-	return &CategoryRepository{db: db}
+	return &CategoryRepository{DB: db}
 }
 
-func (r *CategoryRepository) GetAllCategories() ([]Category, error) {
-	rows, err := r.db.Query(`
+func (r *CategoryRepository) GetAll() ([]Category, error) {
+	rows, err := r.DB.Query(`
 		SELECT id, name
 		FROM categories
+		ORDER BY id
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var categories []Category
+	var list []Category
 
 	for rows.Next() {
 		var c Category
 		if err := rows.Scan(&c.ID, &c.Name); err != nil {
 			return nil, err
 		}
-		categories = append(categories, c)
+		list = append(list, c)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return categories, nil
+	return list, nil
 }

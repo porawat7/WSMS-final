@@ -55,32 +55,31 @@ func main() {
 
 	// ---------------- COURSES (GET ONLY) ----------------
 	nethttp.HandleFunc(
-		"/api/v1/courses",
-		httpDelivery.CORSMiddleware(
-			httpDelivery.Chain(
-				courseHandler.GetAllCourses,
-				apiKeyMiddleware.Handle,
-				httpDelivery.LoggingMiddleware(db),
-				httpDelivery.RateLimitMiddleware(db),
-				httpDelivery.QuotaMiddleware(db),
-			),
+	"/api/v1/courses",
+	httpDelivery.CORSMiddleware(
+		httpDelivery.Chain(
+			courseHandler.GetCourses,
+			apiKeyMiddleware.Handle,
+			httpDelivery.LoggingMiddleware(db),
+			httpDelivery.RateLimitMiddleware(db),
+			httpDelivery.QuotaMiddleware(db),
 		),
-	)
+	),
+)
 
 	// ---------------- CATEGORIES ----------------
 	nethttp.HandleFunc(
-		"/api/v1/categories",
-		httpDelivery.CORSMiddleware(
-			httpDelivery.Chain(
-				categoryHandler.GetAllCategories,
-				apiKeyMiddleware.Handle,
-				httpDelivery.LoggingMiddleware(db),
-				httpDelivery.RateLimitMiddleware(db),
-				httpDelivery.QuotaMiddleware(db),
-			),
+	"/api/v1/categories",
+	httpDelivery.CORSMiddleware(
+		httpDelivery.Chain(
+			categoryHandler.GetAllCategories,
+			apiKeyMiddleware.Handle,
+			httpDelivery.LoggingMiddleware(db),
+			httpDelivery.RateLimitMiddleware(db),
+			httpDelivery.QuotaMiddleware(db),
 		),
-	)
-
+	),
+)
 	// ---------------- USAGE ----------------
 	nethttp.HandleFunc(
 		"/api/v1/usage",

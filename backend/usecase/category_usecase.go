@@ -2,18 +2,14 @@ package usecase
 
 import "backend/repository"
 
-type CategoryRepository interface {
-	GetAllCategories() ([]repository.Category, error)
-}
-
 type CategoryUsecase struct {
-	repo CategoryRepository
+	repo *repository.CategoryRepository
 }
 
-func NewCategoryUsecase(r CategoryRepository) *CategoryUsecase {
+func NewCategoryUsecase(r *repository.CategoryRepository) *CategoryUsecase {
 	return &CategoryUsecase{repo: r}
 }
 
 func (u *CategoryUsecase) GetAllCategories() ([]repository.Category, error) {
-	return u.repo.GetAllCategories()
+	return u.repo.GetAll()
 }
