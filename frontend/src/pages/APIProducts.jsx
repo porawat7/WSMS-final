@@ -17,7 +17,7 @@ const ApiProducts = () => {
       title: 'Search by Category',
       description: 'ดึงรายชื่อคอร์สเรียนแยกตามประเภทที่ต้องการ',
       bestFor: 'หน้าแสดงผลเฉพาะหมวดหมู่ที่สนใจ',
-      endpoint: 'GET /api/v1/courses/category?category=Coding'
+      endpoint: 'GET  /api/v1/categories'
     },
     {
       id: 'courseById',

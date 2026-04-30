@@ -81,18 +81,13 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// 🔥 FIX สำคัญ: ใช้ X-API-Key
 		key := r.Header.Get("X-API-Key")
-
-		// debug (ดูใน terminal)
-		println("API KEY:", key)
-
 		if key == "" {
 			http.Error(w, "Missing API Key", http.StatusUnauthorized)
 			return
 		}
 
-		userID, err := m.usecase.ValidateKey(key)
+		userID, err := m.usecase.ValidateAPIKey(key)
 		if err != nil {
 			http.Error(w, "Invalid API Key", http.StatusUnauthorized)
 			return

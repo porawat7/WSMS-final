@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	connStr := "host=localhost port=5432 user=course_user password=123 dbname=course_db sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
@@ -21,62 +20,45 @@ func main() {
 		log.Fatal("Database connection error:", err)
 	}
 
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		log.Fatal("Database ping failed:", err)
 	}
 
 	fmt.Println("Connected to PostgreSQL successfully!")
 
-	// ---------------- API KEY SYSTEM ----------------
-
+	// ---------------- API KEY ----------------
 	apiKeyRepo := repository.NewAPIKeyRepository(db)
 	apiKeyUsecase := usecase.NewAPIKeyUsecase(apiKeyRepo)
-
 	apiKeyMiddleware := httpDelivery.NewAPIKeyMiddleware(apiKeyUsecase)
 
 	// ---------------- COURSE ----------------
-
-	courseRepo := repository.NewSQLiteCourseRepository(db)
+	courseRepo := repository.NewCourseRepository(db)
 	courseUsecase := usecase.NewCourseUsecase(courseRepo)
 	courseHandler := httpDelivery.NewCourseHandler(courseUsecase)
 
-	// ---------------- AUTH (🔥 แก้ตรงนี้) ----------------
+	// ---------------- CATEGORY ----------------
+	categoryRepo := repository.NewCategoryRepository(db)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
+	categoryHandler := httpDelivery.NewCategoryHandler(categoryUsecase)
 
-	authHandler := httpDelivery.NewAuthHandler(db, apiKeyUsecase)
+	// ---------------- AUTH ----------------
+	authHandler := httpDelivery.NewAuthHandler(db)
 
 	// ---------------- USAGE ----------------
-
 	usageHandler := httpDelivery.NewUsageHandler(db)
 
 	// ---------------- LOGIN ----------------
-
 	nethttp.HandleFunc(
 		"/api/v1/login",
 		httpDelivery.CORSMiddleware(authHandler.Login),
 	)
 
-	// ---------------- COURSES ----------------
-
+	// ---------------- COURSES (GET ONLY) ----------------
 	nethttp.HandleFunc(
 		"/api/v1/courses",
 		httpDelivery.CORSMiddleware(
 			httpDelivery.Chain(
-
-				func(w nethttp.ResponseWriter, r *nethttp.Request) {
-
-					if r.Method == "GET" {
-						courseHandler.GetAllCourses(w, r)
-
-					} else if r.Method == "POST" {
-						courseHandler.CreateCourse(w, r)
-
-					} else {
-						nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
-					}
-				},
-
-				// 🔥 ลำดับต้องแบบนี้
+				courseHandler.GetAllCourses,
 				apiKeyMiddleware.Handle,
 				httpDelivery.LoggingMiddleware(db),
 				httpDelivery.RateLimitMiddleware(db),
@@ -85,46 +67,12 @@ func main() {
 		),
 	)
 
-	// ---------------- COURSE BY ID ----------------
-
+	// ---------------- CATEGORIES ----------------
 	nethttp.HandleFunc(
-		"/api/v1/course",
+		"/api/v1/categories",
 		httpDelivery.CORSMiddleware(
 			httpDelivery.Chain(
-
-				func(w nethttp.ResponseWriter, r *nethttp.Request) {
-
-					if r.Method == "GET" {
-						courseHandler.GetCourseByID(w, r)
-
-					} else if r.Method == "PUT" {
-						courseHandler.UpdateCourse(w, r)
-
-					} else if r.Method == "DELETE" {
-						courseHandler.DeleteCourse(w, r)
-
-					} else {
-						nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
-					}
-				},
-
-				apiKeyMiddleware.Handle,
-				httpDelivery.LoggingMiddleware(db),
-				httpDelivery.RateLimitMiddleware(db),
-				httpDelivery.QuotaMiddleware(db),
-			),
-		),
-	)
-
-	// ---------------- CATEGORY ----------------
-
-	nethttp.HandleFunc(
-		"/api/v1/courses/category",
-		httpDelivery.CORSMiddleware(
-			httpDelivery.Chain(
-
-				courseHandler.GetCoursesByCategory,
-
+				categoryHandler.GetAllCategories,
 				apiKeyMiddleware.Handle,
 				httpDelivery.LoggingMiddleware(db),
 				httpDelivery.RateLimitMiddleware(db),
@@ -134,14 +82,11 @@ func main() {
 	)
 
 	// ---------------- USAGE ----------------
-
 	nethttp.HandleFunc(
 		"/api/v1/usage",
 		httpDelivery.CORSMiddleware(
 			httpDelivery.Chain(
-
 				usageHandler.GetUsage,
-
 				apiKeyMiddleware.Handle,
 				httpDelivery.LoggingMiddleware(db),
 				httpDelivery.RateLimitMiddleware(db),
@@ -151,6 +96,5 @@ func main() {
 	)
 
 	fmt.Println("Server running on port 8081...")
-
 	log.Fatal(nethttp.ListenAndServe(":8081", nil))
 }
