@@ -50,7 +50,7 @@ INSERT INTO categories (name) VALUES
 
 INSERT INTO users (name, email, password,status) VALUES
 ('User One', 'user1@example.com', '123456', 'basic'),
-('User Two', 'user2@example.com', '123456', 'basic');
+
 
 
 -- Insert sample courses

@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"backend/usecase"
@@ -16,12 +17,13 @@ func NewCategoryHandler(u *usecase.CategoryUsecase) *CategoryHandler {
 }
 
 func (h *CategoryHandler) GetAllCategories(w http.ResponseWriter, r *http.Request) {
+
 	categories, err := h.usecase.GetAllCategories()
 	if err != nil {
-		http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
+		fmt.Println("ERROR:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(categories)
 }

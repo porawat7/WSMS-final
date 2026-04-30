@@ -1,117 +1,221 @@
 package repository
 
 import (
-	"backend/domain"
 	"database/sql"
+	"fmt"
 )
 
-type CourseRepository struct {
+type CourseRepository interface {
+	GetAllCourses() ([]map[string]interface{}, error)
+	GetCourseByID(id int) (map[string]interface{}, error)
+	GetCoursesByCategory(categoryID int) ([]map[string]interface{}, error)
+}
+
+type courseRepository struct {
 	db *sql.DB
 }
 
-func NewCourseRepository(db *sql.DB) *CourseRepository {
-	return &CourseRepository{db: db}
+func NewCourseRepository(db *sql.DB) CourseRepository {
+	return &courseRepository{db: db}
 }
 
+//
 // ---------------- GET ALL ----------------
+//
 
-func (r *CourseRepository) GetAllCourses() ([]domain.Course, error) {
+func (r *courseRepository) GetAllCourses() ([]map[string]interface{}, error) {
 	rows, err := r.db.Query(`
 		SELECT 
-			c.id,
-			c.name,
-			c.category_id,
-			c.price,
-			c.description,
-			c.platform,
-			c.link,
-			c.start_date,
-			c.time,
-			ct.name as category_name
-		FROM courses c
-		JOIN categories ct ON c.category_id = ct.id
-		ORDER BY c.id
+			id,
+			name,
+			category_id,
+			price,
+			description,
+			platform,
+			link,
+			start_date,
+			time
+		FROM courses
 	`)
 	if err != nil {
+		fmt.Println("QUERY ERROR:", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var courses []domain.Course
+	var results []map[string]interface{}
 
 	for rows.Next() {
-		var c domain.Course
+		var (
+			id          int
+			name        string
+			categoryID  int
+			price       int
+			description string
+			platform    string
+			link        string
+			startDate   string
+			timeStr     string
+		)
 
 		err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.CategoryID,
-			&c.Price,
-			&c.Description,
-			&c.Platform,
-			&c.Link,
-			&c.StartDate,
-			&c.Time,
-			&c.CategoryName,
+			&id,
+			&name,
+			&categoryID,
+			&price,
+			&description,
+			&platform,
+			&link,
+			&startDate,
+			&timeStr,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		courses = append(courses, c)
+		results = append(results, map[string]interface{}{
+			"id":          id,
+			"name":        name,
+			"category_id": categoryID,
+			"price":       price,
+			"description": description,
+			"platform":    platform,
+			"link":        link,
+			"start_date":  startDate,
+			"time":        timeStr,
+		})
 	}
 
-	return courses, nil
+	return results, nil
 }
 
-// ---------------- GET BY CATEGORY ----------------
+//
+// ---------------- GET BY ID ----------------
+//
 
-func (r *CourseRepository) GetByCategoryID(categoryID int) ([]domain.Course, error) {
+func (r *courseRepository) GetCourseByID(id int) (map[string]interface{}, error) {
+
+	var (
+		name        string
+		categoryID  int
+		price       int
+		description string
+		platform    string
+		link        string
+		startDate   string
+		timeStr     string
+	)
+
+	err := r.db.QueryRow(`
+		SELECT 
+			name,
+			category_id,
+			price,
+			description,
+			platform,
+			link,
+			start_date,
+			time
+		FROM courses
+		WHERE id = $1
+	`, id).Scan(
+		&name,
+		&categoryID,
+		&price,
+		&description,
+		&platform,
+		&link,
+		&startDate,
+		&timeStr,
+	)
+
+	if err != nil {
+		fmt.Println("QUERY ERROR:", err)
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"id":          id,
+		"name":        name,
+		"category_id": categoryID,
+		"price":       price,
+		"description": description,
+		"platform":    platform,
+		"link":        link,
+		"start_date":  startDate,
+		"time":        timeStr,
+	}, nil
+}
+
+//
+// ---------------- GET BY CATEGORY ----------------
+//
+
+func (r *courseRepository) GetCoursesByCategory(categoryID int) ([]map[string]interface{}, error) {
+
 	rows, err := r.db.Query(`
 		SELECT 
-			c.id,
-			c.name,
-			c.category_id,
-			c.price,
-			c.description,
-			c.platform,
-			c.link,
-			c.start_date,
-			c.time,
-			ct.name as category_name
-		FROM courses c
-		JOIN categories ct ON c.category_id = ct.id
-		WHERE c.category_id = $1
-		ORDER BY c.id
+			id,
+			name,
+			category_id,
+			price,
+			description,
+			platform,
+			link,
+			start_date,
+			time
+		FROM courses
+		WHERE category_id = $1
 	`, categoryID)
+
 	if err != nil {
+		fmt.Println("QUERY ERROR:", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var list []domain.Course
+	var results []map[string]interface{}
 
 	for rows.Next() {
-		var c domain.Course
+		var (
+			id          int
+			name        string
+			catID       int
+			price       int
+			description string
+			platform    string
+			link        string
+			startDate   string
+			timeStr     string
+		)
 
 		err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.CategoryID,
-			&c.Price,
-			&c.Description,
-			&c.Platform,
-			&c.Link,
-			&c.StartDate,
-			&c.Time,
-			&c.CategoryName,
+			&id,
+			&name,
+			&catID,
+			&price,
+			&description,
+			&platform,
+			&link,
+			&startDate,
+			&timeStr,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		list = append(list, c)
+		results = append(results, map[string]interface{}{
+			"id":          id,
+			"name":        name,
+			"category_id": catID,
+			"price":       price,
+			"description": description,
+			"platform":    platform,
+			"link":        link,
+			"start_date":  startDate,
+			"time":        timeStr,
+		})
 	}
 
-	return list, nil
+	return results, nil
 }

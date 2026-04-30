@@ -68,7 +68,11 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 
 	v, exists := visitors[apiKey]
 	if !exists {
-		cfg := rateLimits[status]
+		cfg, ok := rateLimits[status]
+		if !ok {
+			cfg = rateLimits["basic"]
+		}
+
 		limiter := rate.NewLimiter(cfg.RPS, cfg.Burst)
 
 		visitors[apiKey] = &visitor{
@@ -79,6 +83,17 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 
 	return v.limiter
 }
+
+//
+// ---------------- CONTEXT KEY ----------------
+//
+
+type contextKey string
+
+const (
+	ContextUserID contextKey = "userID"
+	ContextAPIKey contextKey = "apiKey"
+)
 
 //
 // ---------------- API KEY ----------------
@@ -99,8 +114,8 @@ func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "userID", userID)
-		ctx = context.WithValue(ctx, "apiKey", key)
+		ctx := context.WithValue(r.Context(), ContextUserID, userID)
+		ctx = context.WithValue(ctx, ContextAPIKey, key)
 
 		next(w, r.WithContext(ctx))
 	}
@@ -114,7 +129,7 @@ func RateLimitMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 
-			apiKey, ok := r.Context().Value("apiKey").(string)
+			apiKey, ok := r.Context().Value(ContextAPIKey).(string)
 			if !ok || apiKey == "" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
@@ -177,13 +192,12 @@ func QuotaMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 
-			// ✅ นับเฉพาะ 3 API เท่านั้น
 			if !shouldCountQuota(r) {
 				next(w, r)
 				return
 			}
 
-			apiKey, ok := r.Context().Value("apiKey").(string)
+			apiKey, ok := r.Context().Value(ContextAPIKey).(string)
 			if !ok || apiKey == "" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
@@ -205,7 +219,10 @@ func QuotaMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			limit := quotaLimits[status]
+			limit, ok := quotaLimits[status]
+			if !ok {
+				limit = quotaLimits["basic"]
+			}
 
 			if numrequest >= limit {
 				http.Error(w, "Quota exceeded", http.StatusTooManyRequests)
@@ -236,7 +253,7 @@ func LoggingMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 
-			apiKey, _ := r.Context().Value("apiKey").(string)
+			apiKey, _ := r.Context().Value(ContextAPIKey).(string)
 
 			next(w, r)
 

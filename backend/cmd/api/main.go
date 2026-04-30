@@ -5,6 +5,7 @@ import (
 	"backend/repository"
 	"backend/usecase"
 	"database/sql"
+	"fmt"
 	"log"
 	nethttp "net/http"
 
@@ -12,60 +13,123 @@ import (
 )
 
 func main() {
+
 	connStr := "host=localhost port=5432 user=course_user password=123 dbname=course_db sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Database connection error:", err)
 	}
 
-	// ---------- API KEY ----------
+	err = db.Ping()
+	if err != nil {
+		log.Fatal("Database ping failed:", err)
+	}
+
+	fmt.Println("Connected to PostgreSQL successfully!")
+
+	// ---------------- API KEY ----------------
+
 	apiKeyRepo := repository.NewAPIKeyRepository(db)
 	apiKeyUsecase := usecase.NewAPIKeyUsecase(apiKeyRepo)
-	apiKeyMiddleware := httpDelivery.NewAPIKeyMiddleware(apiKeyUsecase)
 
-	// ---------- USER HANDLER ----------
-	userHandler := httpDelivery.NewUserHandler(db)
+	apiKeyMiddleware := httpDelivery.NewAPIKeyMiddleware(apiKeyUsecase)
+	apiKeyHandler := httpDelivery.NewAPIKeyHandler(apiKeyUsecase)
+
+	// ---------------- COURSE ----------------
+
+	courseRepo := repository.NewCourseRepository(db)
+	courseUsecase := usecase.NewCourseUsecase(courseRepo)
+	courseHandler := httpDelivery.NewCourseHandler(courseUsecase)
+
+	// ---------------- CATEGORY ----------------
+
+	categoryRepo := repository.NewCategoryRepository(db)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
+	categoryHandler := httpDelivery.NewCategoryHandler(categoryUsecase)
+
+	// ---------------- AUTH ----------------
+
+	authHandler := httpDelivery.NewAuthHandler(db)
+
+	// ---------------- USAGE ----------------
+
 	usageHandler := httpDelivery.NewUsageHandler(db)
 
-    authHandler := httpDelivery.NewAuthHandler(db)
+	// ---------------- LOGIN ----------------
 
 	nethttp.HandleFunc(
-	"/api/v1/login",
-	httpDelivery.CORSMiddleware(authHandler.Login),
-)
+		"/api/v1/login",
+		httpDelivery.CORSMiddleware(authHandler.Login),
+	)
 
+	// ---------------- API KEYS ----------------
 
-nethttp.HandleFunc(
-	"/api/v1/users/me",
-	httpDelivery.CORSMiddleware(
-		httpDelivery.Chain(
-			userHandler.GetMe,
-			apiKeyMiddleware.Handle, // ✅ ใช้ middleware ด้วย
+	nethttp.HandleFunc(
+		"/api/v1/api-keys",
+		httpDelivery.CORSMiddleware(apiKeyHandler.CreateKey),
+	)
+
+	// ---------------- COURSES ----------------
+
+	nethttp.HandleFunc(
+		"/api/v1/courses",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
+				courseHandler.GetAllCourses,
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
 		),
-	),
-)
+	)
 
-nethttp.HandleFunc(
-	"/api/v1/users/package",
-	httpDelivery.CORSMiddleware(
-		httpDelivery.Chain(
-			userHandler.UpdateUserPackage,
-			apiKeyMiddleware.Handle, // ✅ ใช้ middleware ด้วย
+	// ---------------- COURSE BY ID ----------------
+
+	nethttp.HandleFunc(
+		"/api/v1/course",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
+				courseHandler.GetCourseByID,
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
 		),
-	),
-)
+	)
 
-nethttp.HandleFunc(
-    "/api/v1/usage",
-    httpDelivery.CORSMiddleware(
-        httpDelivery.Chain(
-            usageHandler.GetUsage,
-            apiKeyMiddleware.Handle,
-        ),
-    ),
-)
+	// ---------------- CATEGORY ----------------
 
-	log.Println("Server running :8081")
+	nethttp.HandleFunc(
+		"/api/v1/categories",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
+				categoryHandler.GetAllCategories,
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
+		),
+	)
+
+	// ---------------- USAGE ----------------
+
+	nethttp.HandleFunc(
+		"/api/v1/usage",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
+				usageHandler.GetUsage,
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
+		),
+	)
+
+	fmt.Println("Server running on port 8081...")
 	log.Fatal(nethttp.ListenAndServe(":8081", nil))
 }

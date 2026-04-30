@@ -1,40 +1,45 @@
 package repository
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
-type Category struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+type CategoryRepository interface {
+	GetAllCategories() ([]map[string]interface{}, error)
 }
 
-type CategoryRepository struct {
-	DB *sql.DB
+type categoryRepository struct {
+	db *sql.DB
 }
 
-func NewCategoryRepository(db *sql.DB) *CategoryRepository {
-	return &CategoryRepository{DB: db}
+func NewCategoryRepository(db *sql.DB) CategoryRepository {
+	return &categoryRepository{db: db}
 }
 
-func (r *CategoryRepository) GetAll() ([]Category, error) {
-	rows, err := r.DB.Query(`
-		SELECT id, name
-		FROM categories
-		ORDER BY id
-	`)
+func (r *categoryRepository) GetAllCategories() ([]map[string]interface{}, error) {
+	rows, err := r.db.Query(`SELECT id, name FROM categories`)
 	if err != nil {
+		fmt.Println("QUERY ERROR:", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var list []Category
+	var results []map[string]interface{}
 
 	for rows.Next() {
-		var c Category
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+		var id int
+		var name string
+
+		if err := rows.Scan(&id, &name); err != nil {
 			return nil, err
 		}
-		list = append(list, c)
+
+		results = append(results, map[string]interface{}{
+			"id":   id,
+			"name": name,
+		})
 	}
 
-	return list, nil
+	return results, nil
 }

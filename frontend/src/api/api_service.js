@@ -46,12 +46,12 @@ export const createApiKey = async (user_id, name) => {
 // ---------------- GET COURSES ----------------
 
 export const getCourses = async () => {
-
   const apiKey = localStorage.getItem("apiKey");
 
   const res = await fetch(`${BASE_URL}/courses`, {
-
+    method: "GET",
     headers: {
+      "Content-Type": "application/json",
       "x-api-key": apiKey,
     },
   });
