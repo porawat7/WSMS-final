@@ -1,130 +1,127 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-const ApiProducts = () => {
+const APIProducts = () => {
   const navigate = useNavigate();
+
+  const goPlayground = (endpoint) => {
+    navigate(`/api-playground?endpoint=${encodeURIComponent(endpoint)}`);
+  };
 
   const apiList = [
     {
-      id: 'catalog',
-      title: 'Course Catalog API',
-      description: 'ดึงรายชื่อคอร์สเรียนทั้งหมดที่มีในระบบ พร้อมหมวดหมู่ ราคา',
-      bestFor: 'แอปเปรียบเทียบคอร์สเรียน หรือหน้า Landing Page ของสถาบัน',
-      endpoint: 'GET /api/v1/courses'
+      title: "Course Catalog API",
+      description: "ดึงข้อมูลคอร์สทั้งหมดในระบบ พร้อมรายละเอียด ราคา และหมวดหมู่",
+      endpoint: "/api/v1/courses",
     },
     {
-      id: 'search',
-      title: 'Search by Category',
-      description: 'ดึงรายชื่อคอร์สเรียนแยกตามประเภทที่ต้องการ',
-      bestFor: 'หน้าแสดงผลเฉพาะหมวดหมู่ที่สนใจ',
-      endpoint: 'GET  /api/v1/categories'
+      title: "All Categories API",
+      description: "ดึงประเภทคอร์สทั้งหมดในระบบ เพื่อนำไปใช้จัดหมวดหมู่การแสดงผล",
+      endpoint: "/api/v1/categories",
     },
     {
-      id: 'courseById',
-      title: 'Course by ID',
-      description: 'ดึงข้อมูลคอร์สตาม ID (รองรับ update และ delete)',
-      bestFor: 'หน้าแสดงรายละเอียดคอร์ส',
-      endpoint: 'GET /api/v1/course?id=1'
-    }
+      title: "Courses By Category",
+      description: "ดึงคอร์สตามประเภทที่ต้องการ ด้วย query category_id",
+      endpoint: "/api/v1/courses?category_id=1",
+    },
   ];
 
   return (
-    <div style={{ backgroundColor: '#f1f5f9', minHeight: '100vh', padding: '80px 20px', fontFamily: 'sans-serif' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        
-        {/* Header Section */}
-        <div style={{ marginBottom: '60px', textAlign: 'left' }}>
-          <h1 style={{ fontSize: '40px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' }}>
-            รวม API สำหรับระบบคอร์สเรียน
-          </h1>
-          <p style={{ fontSize: '18px', color: '#64748b', lineHeight: '1.6', maxWidth: '850px' }}>
-            Course API เป็นบริการที่รวบรวมข้อมูลคอร์สเรียนออนไลน์ และเปิดให้ผู้พัฒนาสามารถเข้าถึงข้อมูลผ่าน REST API 
-            เพื่อใช้ในการพัฒนาเว็บไซต์หรือแอปพลิเคชันต่าง ๆ
-          </p>
-        </div>
+    <div style={page}>
+      <h1 style={title}>API Products</h1>
 
-        {/* API Cards Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
-          gap: '30px',
-        }}>
-          {apiList.map((api) => (
-            <div key={api.id} style={cardStyle}>
-              
-              {/* Content */}
-              <div style={{ flexGrow: 1 }}>
-                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', textAlign: 'center', marginBottom: '25px' }}>
-                  {api.title}
-                </h3>
-                
-                <p style={{ fontSize: '15px', color: '#475569', marginBottom: '20px', fontWeight: '600', lineHeight: '1.5' }}>
-                  {api.description}
-                </p>
+      {/* การ์ดเรียงแนวนอน */}
+      <div style={cardRow}>
+        {apiList.map((api, index) => (
+          <div key={index} style={card}>
+            {/* บน: ชื่อ */}
+            <h3 style={cardTitle}>{api.title}</h3>
 
-                <p style={{ fontSize: '14px', color: '#1e293b', marginBottom: '20px' }}>
-                  <strong style={{ color: '#64748b' }}>Best for :</strong> {api.bestFor}
-                </p>
+            {/* กลาง: คำอธิบาย */}
+            <p style={cardDesc}>{api.description}</p>
 
-                <div style={endpointBoxStyle}>
-                  <code style={{ fontSize: '13px', color: '#0047AB', fontWeight: 'bold' }}>
-                    Endpoint : {api.endpoint}
-                  </code>
-                </div>
-              </div>
-
-              {/* Button */}
-              <div style={{ textAlign: 'right', marginTop: '30px' }}>
-                <button 
-                  onClick={() => navigate('/playground', { state: api })}
-                  style={viewDetailBtnStyle}
-                >
-                  view detail
-                </button>
-              </div>
+            {/* ล่าง: endpoint + ปุ่ม */}
+            <div style={bottomBox}>
+              <code style={endpoint}>{api.endpoint}</code>
+              <button
+                style={btn}
+                onClick={() => goPlayground(api.endpoint)}
+              >
+                View in Playground
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
-// --- Styles ---
-const cardStyle = {
-  backgroundColor: 'white',
-  padding: '45px 40px',
-  borderRadius: '35px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
-  border: '1px solid #f1f5f9',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'space-between',
-  transition: 'transform 0.3s ease',
+/* ---------------- styles ---------------- */
+
+const page = {
+  fontFamily: "sans-serif",
+  padding: "80px 40px",
+  background: "#f8fafc",
+  minHeight: "100vh",
 };
 
-const endpointBoxStyle = {
-  marginTop: '10px',
-  padding: '12px 18px',
-  backgroundColor: '#f8fafc',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
-  display: 'inline-block',
-  width: '100%',
-  boxSizing: 'border-box'
+const title = {
+  fontSize: "36px",
+  marginBottom: "40px",
 };
 
-const viewDetailBtnStyle = {
-  backgroundColor: '#0047AB',
-  color: 'white',
-  border: 'none',
-  padding: '12px 30px',
-  borderRadius: '30px',
-  fontWeight: 'bold',
-  fontSize: '16px',
-  cursor: 'pointer',
-  transition: 'background 0.2s',
-  boxShadow: '0 4px 12px rgba(0, 71, 171, 0.2)',
+const cardRow = {
+  display: "flex",
+  gap: "30px",
+  flexWrap: "wrap",
 };
 
-export default ApiProducts;
+const card = {
+  flex: "1",
+  minWidth: "320px",
+  background: "white",
+  padding: "30px",
+  borderRadius: "18px",
+  border: "1px solid #e2e8f0",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+};
+
+const cardTitle = {
+  fontSize: "22px",
+  marginBottom: "15px",
+};
+
+const cardDesc = {
+  color: "#475569",
+  lineHeight: "1.6",
+  marginBottom: "30px",
+};
+
+const bottomBox = {
+  marginTop: "auto",
+};
+
+const endpoint = {
+  display: "block",
+  background: "#f1f5f9",
+  padding: "10px",
+  borderRadius: "8px",
+  marginBottom: "15px",
+  fontSize: "13px",
+};
+
+const btn = {
+  width: "100%",
+  padding: "12px",
+  background: "#2563eb",
+  color: "white",
+  border: "none",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontWeight: "bold",
+};
+
+export default APIProducts;

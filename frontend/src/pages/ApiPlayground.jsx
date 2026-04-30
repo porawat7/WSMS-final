@@ -1,15 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const BASE_URL = "http://localhost:8081";
 
 const ApiPlayground = () => {
-  const [method, setMethod] = useState("GET");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const endpointFromURL = params.get("endpoint");
+
+  const [apiKey, setApiKey] = useState("");
   const [endpoint, setEndpoint] = useState("/api/v1/courses");
+  const [method, setMethod] = useState("GET");
   const [query, setQuery] = useState("");
-  const [apiKey, setApiKey] = useState(localStorage.getItem("apiKey") || "");
   const [body, setBody] = useState("{\n  \n}");
   const [response, setResponse] = useState("Ready...");
   const [status, setStatus] = useState("Idle");
+
+  useEffect(() => {
+    const key = localStorage.getItem("apiKey") || "";
+    setApiKey(key);
+
+    if (endpointFromURL) {
+      setEndpoint(endpointFromURL);
+    }
+  }, [endpointFromURL]);
 
   const buildUrl = () => {
     const q = query.trim();
@@ -48,33 +62,15 @@ const ApiPlayground = () => {
   };
 
   return (
-    <div style={pageStyle}>
-      <h1 style={titleStyle}>API Console</h1>
+    <div style={page}>
+      <h1 style={title}>API Playground</h1>
 
-      {/* API KEY DISPLAY */}
-      <div style={apiKeyBox}>
-        <div>
-          <strong>Current API Key:</strong>
-          <div style={{ fontFamily: "monospace", marginTop: "4px" }}>
-            {apiKey || "No API Key in localStorage"}
-          </div>
-        </div>
-
-        {apiKey && (
-          <button
-            style={copyBtn}
-            onClick={() => navigator.clipboard.writeText(apiKey)}
-          >
-            Copy
-          </button>
-        )}
-      </div>
-
-      <div style={gridStyle}>
+      <div style={grid}>
         {/* REQUEST */}
-        <div style={cardStyle}>
+        <div style={card}>
           <h3>Request</h3>
 
+          {/* ✅ ช่องกรอก API KEY */}
           <label>API Key</label>
           <input
             value={apiKey}
@@ -82,12 +78,12 @@ const ApiPlayground = () => {
               setApiKey(e.target.value);
               localStorage.setItem("apiKey", e.target.value);
             }}
-            style={inputStyle}
-            placeholder="ใส่ API Key ตรงนี้"
+            placeholder="Paste API Key here"
+            style={input}
           />
 
           <label>Method</label>
-          <select value={method} onChange={(e) => setMethod(e.target.value)} style={inputStyle}>
+          <select value={method} onChange={(e) => setMethod(e.target.value)} style={input}>
             <option>GET</option>
             <option>POST</option>
             <option>PUT</option>
@@ -98,38 +94,30 @@ const ApiPlayground = () => {
           <input
             value={endpoint}
             onChange={(e) => setEndpoint(e.target.value)}
-            style={inputStyle}
-            placeholder="/api/v1/courses"
+            style={input}
           />
 
-          <label>Query Params (key=value&key2=value2)</label>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={inputStyle}
-            placeholder="category=programming"
-          />
 
           {method !== "GET" && (
             <>
-              <label>Request Body (JSON)</label>
+              <label>Body (JSON)</label>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                style={textareaStyle}
+                style={textarea}
               />
             </>
           )}
 
-          <button style={runBtnStyle} onClick={runAPI}>
+          <button style={runBtn} onClick={runAPI}>
             ▶ Run Request
           </button>
         </div>
 
         {/* RESPONSE */}
-        <div style={cardStyle}>
+        <div style={card}>
           <h3>Response</h3>
-          <div style={statusStyle}>{status}</div>
+          <div style={statusText}>{status}</div>
           <pre style={responseBox}>{response}</pre>
         </div>
       </div>
@@ -139,32 +127,32 @@ const ApiPlayground = () => {
 
 /* ---------------- styles ---------------- */
 
-const pageStyle = {
+const page = {
   fontFamily: "sans-serif",
-  padding: "40px",
+  padding: "50px",
   background: "#f8fafc",
   minHeight: "100vh",
 };
 
-const titleStyle = {
+const title = {
   fontSize: "32px",
   marginBottom: "20px",
 };
 
-const gridStyle = {
+const grid = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
   gap: "20px",
 };
 
-const cardStyle = {
+const card = {
   background: "white",
   padding: "20px",
   borderRadius: "12px",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+  border: "1px solid #e2e8f0",
 };
 
-const inputStyle = {
+const input = {
   width: "100%",
   padding: "8px",
   marginBottom: "10px",
@@ -172,13 +160,13 @@ const inputStyle = {
   border: "1px solid #e2e8f0",
 };
 
-const textareaStyle = {
-  ...inputStyle,
-  height: "140px",
+const textarea = {
+  ...input,
+  height: "120px",
   fontFamily: "monospace",
 };
 
-const runBtnStyle = {
+const runBtn = {
   marginTop: "10px",
   padding: "10px",
   background: "#2563eb",
@@ -197,29 +185,10 @@ const responseBox = {
   overflow: "auto",
 };
 
-const statusStyle = {
+const statusText = {
   marginBottom: "10px",
   fontSize: "12px",
   color: "#64748b",
-};
-
-const apiKeyBox = {
-  background: "#e0f2fe",
-  padding: "12px 16px",
-  borderRadius: "10px",
-  marginBottom: "20px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const copyBtn = {
-  padding: "6px 10px",
-  borderRadius: "6px",
-  border: "none",
-  background: "#0284c7",
-  color: "white",
-  cursor: "pointer",
 };
 
 export default ApiPlayground;

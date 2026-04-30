@@ -8,7 +8,10 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Payment from './pages/Payment';
+
+
 import ApiPlayground from './pages/ApiPlayground';
+
 function App() {
   return (
     <BrowserRouter>
@@ -21,7 +24,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/payment" element={<Payment />} />
-        <Route path="/playground" element={<ApiPlayground />} />
+        <Route path="/api-playground" element={<ApiPlayground />} />
+        
       </Routes>
     </BrowserRouter>
   );
