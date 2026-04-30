@@ -14,48 +14,33 @@ func NewUserHandler(db *sql.DB) *UserHandler {
 	return &UserHandler{db: db}
 }
 
-// ---------------- GET ME ----------------
-func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+type UpgradeRequest struct {
+	Status string `json:"status"`
+}
+
+func (h *UserHandler) UpgradePlan(w http.ResponseWriter, r *http.Request) {
+
 	apiKey := r.Header.Get("x-api-key")
-
-	var name, email, status string
-
-	err := h.db.QueryRow(`
-		SELECT u.name, u.email, u.status
-		FROM users u
-		JOIN api_keys a ON a.user_id = u.id
-		WHERE a.api_key = $1
-	`, apiKey).Scan(&name, &email, &status)
-
-	if err != nil {
-		http.Error(w, "User not found", http.StatusUnauthorized)
+	if apiKey == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"name":   name,
-		"email":  email,
-		"status": status,
-	})
-}
-
-// ---------------- UPDATE PACKAGE ----------------
-func (h *UserHandler) UpdateUserPackage(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("x-api-key")
-
-	var body struct {
-		Status string `json:"status"`
+	var req UpgradeRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
 	}
 
-	json.NewDecoder(r.Body).Decode(&body)
-
-	_, err := h.db.Exec(`
+	// 🔥 update status ผ่าน api_key
+	_, err = h.db.Exec(`
 		UPDATE users
 		SET status = $1
 		WHERE id = (
 			SELECT user_id FROM api_keys WHERE api_key = $2
 		)
-	`, body.Status, apiKey)
+	`, req.Status, apiKey)
 
 	if err != nil {
 		http.Error(w, "Update failed", http.StatusInternalServerError)

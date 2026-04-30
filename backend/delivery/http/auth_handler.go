@@ -9,11 +9,11 @@ import (
 )
 
 type AuthHandler struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewAuthHandler(db *sql.DB) *AuthHandler {
-	return &AuthHandler{DB: db}
+	return &AuthHandler{db: db}
 }
 
 type LoginRequest struct {
@@ -21,63 +21,84 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+type User struct {
+	ID       int
+	Name     string
+	Email    string
+	Status   string
+	Password string
+}
+
+// 🔥 สร้าง API KEY
 func generateAPIKey() string {
-	b := make([]byte, 16)
-	rand.Read(b)
-	return hex.EncodeToString(b)
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+
 	var req LoginRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	var userID int
-	var name, email, status string
+	var user User
 
-	err := h.DB.QueryRow(`
-		SELECT id, name, email, status
+	err = h.db.QueryRow(`
+		SELECT id, name, email, password, status
 		FROM users
-		WHERE email=$1 AND password=$2
-	`, req.Email, req.Password).Scan(&userID, &name, &email, &status)
+		WHERE email = $1
+	`, req.Email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Status,
+	)
 
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
 	}
 
-	// 🔥 หา api key เดิมก่อน
-	var apiKey string
-	err = h.DB.QueryRow(`
-		SELECT api_key FROM api_keys WHERE user_id=$1
-	`, userID).Scan(&apiKey)
+	if user.Password != req.Password {
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		return
+	}
 
-	// ถ้าไม่มี → สร้างใหม่
+	// 🔥 หา api_key
+	var apiKey string
+
+	err = h.db.QueryRow(`
+		SELECT api_key FROM api_keys WHERE user_id = $1
+	`, user.ID).Scan(&apiKey)
+
+	// 🔥 ถ้าไม่มี → สร้างใหม่
 	if err == sql.ErrNoRows {
+
 		apiKey = generateAPIKey()
-		_, err = h.DB.Exec(`
+
+		_, err = h.db.Exec(`
 			INSERT INTO api_keys (user_id, api_key)
 			VALUES ($1, $2)
-		`, userID, apiKey)
+		`, user.ID, apiKey)
 
 		if err != nil {
-			http.Error(w, "Failed to create API key", http.StatusInternalServerError)
+			http.Error(w, "Cannot create api key", http.StatusInternalServerError)
 			return
 		}
-	} else if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	// 🔥 response ครบ
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":      userID,
-		"name":    name,
-		"email":   email,
-		"status":  status,
-		"api_key": apiKey,
+		"id":      user.ID,
+		"name":    user.Name,
+		"email":   user.Email,
+		"status":  user.Status,
+		"api_key": apiKey, // 🔥 ตัวสำคัญ
 	})
 }

@@ -3,7 +3,9 @@ package http
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
+	"strings"
 )
 
 type UsageHandler struct {
@@ -16,42 +18,52 @@ func NewUsageHandler(db *sql.DB) *UsageHandler {
 
 func (h *UsageHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 
-	apiKey, ok := r.Context().Value("apiKey").(string)
-	if !ok || apiKey == "" {
+	apiKey := r.Header.Get("x-api-key")
+	if apiKey == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	var used int
 	var status string
+	var used int
 
 	err := h.db.QueryRow(`
-		SELECT u.numrequest, u.status
+		SELECT u.status, COALESCE(u.numrequest,0)
 		FROM users u
 		JOIN api_keys a ON a.user_id = u.id
 		WHERE a.api_key = $1
-	`, apiKey).Scan(&used, &status)
+	`, apiKey).Scan(&status, &used)
 
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		log.Println("❌ Query error:", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// limit ตาม plan (ต้องตรงกับ middleware)
-	limitMap := map[string]int{
-		"basic":  1000,
-		"silver": 5000,
-		"gold":   10000,
+	// 🔥 FIX: normalize status
+	status = strings.ToLower(status)
+
+	// 🔥 DEBUG
+	log.Println("✅ STATUS:", status)
+	log.Println("✅ USED:", used)
+
+	// 🔥 map limit
+	limit := 1000
+
+	switch status {
+	case "silver":
+		limit = 5000
+	case "gold":
+		limit = 10000
+	case "basic":
+		limit = 1000
+	default:
+		limit = 1000
 	}
 
-	limit := limitMap[status]
-
-	response := map[string]interface{}{
-		"used":  used,
-		"limit": limit,
-		"plan":  status,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"used":   used,
+		"limit":  limit,
+		"status": status,
+	})
 }

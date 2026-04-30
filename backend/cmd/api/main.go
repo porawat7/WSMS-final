@@ -56,6 +56,10 @@ func main() {
 
 	usageHandler := httpDelivery.NewUsageHandler(db)
 
+	// ---------------- USER ----------------
+
+	userHandler := httpDelivery.NewUserHandler(db)
+
 	// ---------------- LOGIN ----------------
 
 	nethttp.HandleFunc(
@@ -125,10 +129,22 @@ func main() {
 				apiKeyMiddleware.Handle,
 				httpDelivery.LoggingMiddleware(db),
 				httpDelivery.RateLimitMiddleware(db),
-				httpDelivery.QuotaMiddleware(db),
 			),
 		),
 	)
+
+	// ---------------- UPGRADE PLAN ----------------
+
+	
+    nethttp.HandleFunc(
+	"/api/v1/upgrade-plan",
+	httpDelivery.CORSMiddleware(
+		httpDelivery.Chain(
+			userHandler.UpgradePlan,
+			httpDelivery.LoggingMiddleware(db),
+		),
+	),
+)
 
 	fmt.Println("Server running on port 8081...")
 	log.Fatal(nethttp.ListenAndServe(":8081", nil))

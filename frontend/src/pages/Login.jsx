@@ -35,17 +35,16 @@ const Login = () => {
         return;
       }
 
-      // 🔥 เก็บ user + api_key
+      // ✅ FIX
       const userData = {
         email: data.email,
         name: data.name,
-        role: data.role,
-        api_key: data.api_key,
+        status: data.status,     // 🔥 เพิ่ม
+        api_key: data.api_key,   // 🔥 เพิ่ม
       };
 
       localStorage.setItem('user', JSON.stringify(userData));
 
-      // 🔥 trigger navbar update
       window.dispatchEvent(new Event('userChanged'));
 
       alert('Login success');
@@ -61,45 +60,37 @@ const Login = () => {
 
   return (
 
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '80vh',
-        backgroundColor: '#f8fafc',
-      }}
-    >
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '80vh',
+      backgroundColor: '#f8fafc',
+    }}>
 
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          padding: '40px',
-          backgroundColor: 'white',
-          borderRadius: '24px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-          textAlign: 'center',
-        }}
-      >
+      <div style={{
+        width: '100%',
+        maxWidth: '400px',
+        padding: '40px',
+        backgroundColor: 'white',
+        borderRadius: '24px',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+        textAlign: 'center',
+      }}>
 
-        <h2
-          style={{
-            color: '#0047AB',
-            marginBottom: '10px',
-            fontWeight: 'bold',
-          }}
-        >
+        <h2 style={{
+          color: '#0047AB',
+          marginBottom: '10px',
+          fontWeight: 'bold',
+        }}>
           Welcome Back
         </h2>
 
-        <p
-          style={{
-            color: '#64748b',
-            marginBottom: '30px',
-            fontSize: '14px',
-          }}
-        >
+        <p style={{
+          color: '#64748b',
+          marginBottom: '30px',
+          fontSize: '14px',
+        }}>
           เข้าสู่ระบบเพื่อจัดการ Course API ของคุณ
         </p>
 
@@ -109,7 +100,6 @@ const Login = () => {
             <label style={labelStyle}>Email Address</label>
             <input
               type="email"
-              placeholder="example@email.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -121,7 +111,6 @@ const Login = () => {
             <label style={labelStyle}>Password</label>
             <input
               type="password"
-              placeholder="••••••••"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -146,8 +135,6 @@ const inputStyle = {
   marginTop: '8px',
   borderRadius: '10px',
   border: '1px solid #e2e8f0',
-  outline: 'none',
-  fontSize: '16px',
 };
 
 const labelStyle = {
@@ -163,9 +150,7 @@ const btnStyle = {
   color: 'white',
   border: 'none',
   borderRadius: '12px',
-  fontSize: '16px',
   fontWeight: 'bold',
-  cursor: 'pointer',
 };
 
 export default Login;
