@@ -1,112 +1,75 @@
 package http
 
 import (
+	"backend/usecase"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"backend/usecase"
 )
 
 type CourseHandler struct {
-	usecase *usecase.CourseUsecase
+	usecase usecase.CourseUsecase
 }
 
-func NewCourseHandler(u *usecase.CourseUsecase) *CourseHandler {
+func NewCourseHandler(u usecase.CourseUsecase) *CourseHandler {
 	return &CourseHandler{usecase: u}
 }
 
-//
-// ---------------- GET ALL + FILTER ----------------
-//
-
 func (h *CourseHandler) GetAllCourses(w http.ResponseWriter, r *http.Request) {
 
-	categoryIDStr := r.URL.Query().Get("category_id")
+	apiKey := r.Header.Get("x-api-key")
+	if apiKey == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	// ✅ ถ้ามี filter category_id
-	if categoryIDStr != "" {
-		categoryID, err := strconv.Atoi(categoryIDStr)
-		if err != nil {
-			http.Error(w, "Invalid category_id", http.StatusBadRequest)
-			return
+	status, err := h.usecase.GetUserStatusByAPIKey(apiKey)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	categoryStr := r.URL.Query().Get("category_id")
+
+	var data []map[string]interface{}
+
+	if categoryStr != "" {
+		categoryID, _ := strconv.Atoi(categoryStr)
+		data, err = h.usecase.GetCoursesByCategory(categoryID)
+	} else {
+		data, err = h.usecase.GetAllCourses()
+	}
+
+	if err != nil {
+		http.Error(w, "error fetching data", http.StatusInternalServerError)
+		return
+	}
+
+	var result []map[string]interface{}
+
+	for _, c := range data {
+
+		item := map[string]interface{}{
+			"id":    c["id"],
+			"name":  c["name"],
+			"price": c["price"],
+			"category_id": c["category_id"],
 		}
 
-		courses, err := h.usecase.GetCoursesByCategory(categoryID)
-		if err != nil {
-			fmt.Println("ERROR:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		// 🔥 silver
+		if status == "silver" || status == "gold" {
+			item["description"] = c["description"]
+			item["start_date"] = c["start_date"]
 		}
 
-		json.NewEncoder(w).Encode(courses)
-		return
+		// 🔥 gold
+		if status == "gold" {
+			item["platform"] = c["platform"]
+			item["link"] = c["link"]
+		}
+
+		result = append(result, item)
 	}
 
-	// ✅ ไม่มี filter → ดึงทั้งหมด
-	courses, err := h.usecase.GetAllCourses()
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(courses)
-}
-
-//
-// ---------------- GET BY ID ----------------
-//
-
-func (h *CourseHandler) GetCourseByID(w http.ResponseWriter, r *http.Request) {
-
-	idStr := r.URL.Query().Get("id")
-	if idStr == "" {
-		http.Error(w, "Missing id", http.StatusBadRequest)
-		return
-	}
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Invalid id", http.StatusBadRequest)
-		return
-	}
-
-	course, err := h.usecase.GetCourseByID(id)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		http.Error(w, "Course not found", http.StatusNotFound)
-		return
-	}
-
-	json.NewEncoder(w).Encode(course)
-}
-
-//
-// ---------------- GET BY CATEGORY ----------------
-//
-
-func (h *CourseHandler) GetCoursesByCategory(w http.ResponseWriter, r *http.Request) {
-
-	categoryIDStr := r.URL.Query().Get("category_id")
-	if categoryIDStr == "" {
-		http.Error(w, "Missing category_id", http.StatusBadRequest)
-		return
-	}
-
-	categoryID, err := strconv.Atoi(categoryIDStr)
-	if err != nil {
-		http.Error(w, "Invalid category_id", http.StatusBadRequest)
-		return
-	}
-
-	courses, err := h.usecase.GetCoursesByCategory(categoryID)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(courses)
+	json.NewEncoder(w).Encode(result)
 }

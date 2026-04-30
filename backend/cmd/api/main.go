@@ -39,7 +39,7 @@ func main() {
 	// ---------------- COURSE ----------------
 
 	courseRepo := repository.NewCourseRepository(db)
-	courseUsecase := usecase.NewCourseUsecase(courseRepo)
+	courseUsecase := usecase.NewCourseUsecase(courseRepo, db) // 🔥 แก้ตรงนี้
 	courseHandler := httpDelivery.NewCourseHandler(courseUsecase)
 
 	// ---------------- CATEGORY ----------------
@@ -60,10 +60,13 @@ func main() {
 
 	userHandler := httpDelivery.NewUserHandler(db)
 
+	// ---------------- REGISTER ----------------
+
 	nethttp.HandleFunc(
-	"/api/v1/register",
-	httpDelivery.CORSMiddleware(authHandler.Register),
-)
+		"/api/v1/register",
+		httpDelivery.CORSMiddleware(authHandler.Register),
+	)
+
 	// ---------------- LOGIN ----------------
 
 	nethttp.HandleFunc(
@@ -85,21 +88,6 @@ func main() {
 		httpDelivery.CORSMiddleware(
 			httpDelivery.Chain(
 				courseHandler.GetAllCourses,
-				apiKeyMiddleware.Handle,
-				httpDelivery.LoggingMiddleware(db),
-				httpDelivery.RateLimitMiddleware(db),
-				httpDelivery.QuotaMiddleware(db),
-			),
-		),
-	)
-
-	// ---------------- COURSE BY ID ----------------
-
-	nethttp.HandleFunc(
-		"/api/v1/course",
-		httpDelivery.CORSMiddleware(
-			httpDelivery.Chain(
-				courseHandler.GetCourseByID,
 				apiKeyMiddleware.Handle,
 				httpDelivery.LoggingMiddleware(db),
 				httpDelivery.RateLimitMiddleware(db),
@@ -139,16 +127,15 @@ func main() {
 
 	// ---------------- UPGRADE PLAN ----------------
 
-	
-    nethttp.HandleFunc(
-	"/api/v1/upgrade-plan",
-	httpDelivery.CORSMiddleware(
-		httpDelivery.Chain(
-			userHandler.UpgradePlan,
-			httpDelivery.LoggingMiddleware(db),
+	nethttp.HandleFunc(
+		"/api/v1/upgrade-plan",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
+				userHandler.UpgradePlan,
+				httpDelivery.LoggingMiddleware(db),
+			),
 		),
-	),
-)
+	)
 
 	fmt.Println("Server running on port 8081...")
 	log.Fatal(nethttp.ListenAndServe(":8081", nil))

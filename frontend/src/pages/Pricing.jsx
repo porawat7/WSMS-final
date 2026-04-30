@@ -60,9 +60,9 @@ const Pricing = () => {
   };
 
   const packages = [
-    { id: 'basic', name: 'Basic', price: '0', color: '#0047AB', features: ['100 Requests / เดือน', 'เข้าถึง API ทั่วไป', 'Shared API Key'] },
-    { id: 'silver', name: 'Silver', price: '49', color: '#94a3b8', features: ['5,000 Requests / เดือน', 'คอร์ส + โปรโมชั่น', 'Private API Key'] },
-    { id: 'gold', name: 'Gold', price: '99', color: '#f59e0b', features: ['10,000 Requests', 'สถิติ VIP', 'Priority Support'] }
+    { id: 'basic', name: 'Basic', price: '0', color: '#0047AB', features: ['1000 Requests / เดือน', 'Rate limit 20 ครั้ง/นาที', 'Shared API Key'] },
+    { id: 'silver', name: 'Silver', price: '49', color: '#94a3b8', features: ['5,000 Requests / เดือน', 'Rate limit 100 ครั้ง/นาที','ดูรายละเอียดคอร์สและวันที่เริ่มเปิดคอร์สเรียน (description,start_date)', 'Filter ตาม category ได้'] },
+    { id: 'gold', name: 'Gold', price: '99', color: '#f59e0b', features: ['10,000 Requests', 'Rate limit 500 ครั้ง/นาที', 'Filter + Search + Sort'] }
   ];
 
   return (

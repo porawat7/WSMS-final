@@ -38,16 +38,16 @@ var quotaLimits = map[string]int{
 
 var rateLimits = map[string]RateConfig{
 	"basic": {
-		RPS:   rate.Every(time.Minute / 15),
-		Burst: 15,
+		RPS:   rate.Every(time.Minute / 20),
+		Burst: 20,
 	},
 	"silver": {
 		RPS:   rate.Every(time.Minute / 100),
 		Burst: 100,
 	},
 	"gold": {
-		RPS:   rate.Every(time.Minute / 1000),
-		Burst: 1000,
+		RPS:   rate.Every(time.Minute / 500),
+		Burst: 500,
 	},
 }
 
