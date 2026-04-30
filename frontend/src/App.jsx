@@ -1,21 +1,30 @@
 import React from 'react';
-import MenuPage from './pages/MenuPage';
-import OrderPage from './pages/OrderPage';
-import SummaryPage from './pages/SummaryPage';
-
-export default function App() {
-  const [page, setPage] = React.useState('menu');
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import APIProducts from './pages/APIProducts';
+import Pricing from './pages/Pricing';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Payment from './pages/Payment';
+import ApiPlayground from './pages/ApiPlayground';
+function App() {
   return (
-    <div>
-      <nav>
-        <button onClick={() => setPage('menu')}>เมนู</button>
-        <button onClick={() => setPage('order')}>สั่งกาแฟ</button>
-        <button onClick={() => setPage('summary')}>สรุปยอด</button>
-      </nav>
-      <hr />
-      {page === 'menu' && <MenuPage />}
-      {page === 'order' && <OrderPage />}
-      {page === 'summary' && <SummaryPage />}
-    </div>
+    <BrowserRouter>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/api-products" element={<APIProducts />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/playground" element={<ApiPlayground />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
+
+export default App;
