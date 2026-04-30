@@ -21,7 +21,9 @@ func NewAPIKeyMiddleware(u *usecase.APIKeyUsecase) *APIKeyMiddleware {
 	return &APIKeyMiddleware{usecase: u}
 }
 
+//
 // ---------------- PLAN CONFIG ----------------
+//
 
 type RateConfig struct {
 	RPS   rate.Limit
@@ -49,7 +51,9 @@ var rateLimits = map[string]RateConfig{
 	},
 }
 
+//
 // ---------------- RATE LIMIT STORAGE ----------------
+//
 
 type visitor struct {
 	limiter *rate.Limiter
@@ -63,7 +67,6 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 	defer mu.Unlock()
 
 	v, exists := visitors[apiKey]
-
 	if !exists {
 		cfg := rateLimits[status]
 		limiter := rate.NewLimiter(cfg.RPS, cfg.Burst)
@@ -77,7 +80,9 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 	return v.limiter
 }
 
+//
 // ---------------- API KEY ----------------
+//
 
 func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +106,9 @@ func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+//
 // ---------------- RATE LIMIT ----------------
+//
 
 func RateLimitMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
@@ -139,11 +146,42 @@ func RateLimitMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+//
+// ---------------- SHOULD COUNT QUOTA ----------------
+//
+
+func shouldCountQuota(r *http.Request) bool {
+	path := r.URL.Path
+	query := r.URL.Query()
+
+	if path == "/api/v1/categories" {
+		return true
+	}
+
+	if path == "/api/v1/courses" {
+		return true
+	}
+
+	if path == "/api/v1/courses" && query.Get("category_id") != "" {
+		return true
+	}
+
+	return false
+}
+
+//
 // ---------------- QUOTA ----------------
+//
 
 func QuotaMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+
+			// ✅ นับเฉพาะ 3 API เท่านั้น
+			if !shouldCountQuota(r) {
+				next(w, r)
+				return
+			}
 
 			apiKey, ok := r.Context().Value("apiKey").(string)
 			if !ok || apiKey == "" {
@@ -190,7 +228,9 @@ func QuotaMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+//
 // ---------------- LOGGING ----------------
+//
 
 func LoggingMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
@@ -220,7 +260,9 @@ func LoggingMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+//
 // ---------------- CHAIN ----------------
+//
 
 func Chain(
 	h http.HandlerFunc,
