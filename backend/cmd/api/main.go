@@ -1,7 +1,7 @@
 package main
 
 import (
-	"backend/delivery/http"
+	httpDelivery "backend/delivery/http"
 	"backend/repository"
 	"backend/usecase"
 	"database/sql"
@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+
 	connStr := "host=localhost port=5432 user=course_user password=123 dbname=course_db sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
@@ -27,33 +28,116 @@ func main() {
 
 	fmt.Println("Connected to PostgreSQL successfully!")
 
+	// ---------------- API KEY SYSTEM ----------------
+
+	apiKeyRepo := repository.NewAPIKeyRepository(db)
+	apiKeyUsecase := usecase.NewAPIKeyUsecase(apiKeyRepo)
+	apiKeyMiddleware := httpDelivery.NewAPIKeyMiddleware(apiKeyUsecase)
+	apiKeyHandler := httpDelivery.NewAPIKeyHandler(apiKeyUsecase)
+
+	// ---------------- COURSE ----------------
+
 	courseRepo := repository.NewSQLiteCourseRepository(db)
 	courseUsecase := usecase.NewCourseUsecase(courseRepo)
-	courseHandler := http.NewCourseHandler(courseUsecase, db)
-	authHandler := http.NewAuthHandler(db)
 
+	// ✅ เปลี่ยนตรงนี้
+	courseHandler := httpDelivery.NewCourseHandler(courseUsecase)
+
+	// ---------------- AUTH ----------------
+
+	authHandler := httpDelivery.NewAuthHandler(db)
+
+	// ---------------- USAGE ----------------
+
+	usageHandler := httpDelivery.NewUsageHandler(db)
+
+	// ---------------- ROUTES ----------------
+
+	// login
 	nethttp.HandleFunc("/api/v1/login", authHandler.Login)
 
-	nethttp.HandleFunc("/api/v1/courses", func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		if r.Method == "GET" {
-			courseHandler.GetAllCourses(w, r)
-		} else if r.Method == "POST" {
-			courseHandler.CreateCourse(w, r)
-		}
-	})
+	// create API KEY
+	nethttp.HandleFunc("/api/v1/api-keys", apiKeyHandler.CreateKey)
 
-	nethttp.HandleFunc("/api/v1/course", func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		if r.Method == "GET" {
-			courseHandler.GetCourseByID(w, r)
-		} else if r.Method == "PUT" {
-			courseHandler.UpdateCourse(w, r)
-		} else if r.Method == "DELETE" {
-			courseHandler.DeleteCourse(w, r)
-		}
-	})
+	// ---------------- COURSES ----------------
 
-	nethttp.HandleFunc("/api/v1/courses/category", courseHandler.GetCoursesByCategory)
+	nethttp.HandleFunc("/api/v1/courses",
+		httpDelivery.Chain(
+			func(w nethttp.ResponseWriter, r *nethttp.Request) {
+
+				if r.Method == "GET" {
+					courseHandler.GetAllCourses(w, r)
+
+				} else if r.Method == "POST" {
+					courseHandler.CreateCourse(w, r)
+
+				} else {
+					nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
+				}
+			},
+
+			// middleware เรียงลำดับ
+			httpDelivery.LoggingMiddleware(db),
+			apiKeyMiddleware.Handle,
+			httpDelivery.RateLimitMiddleware(db),
+			httpDelivery.QuotaMiddleware(db),
+		),
+	)
+
+	// ---------------- COURSE BY ID ----------------
+
+	nethttp.HandleFunc("/api/v1/course",
+		httpDelivery.Chain(
+			func(w nethttp.ResponseWriter, r *nethttp.Request) {
+
+				if r.Method == "GET" {
+					courseHandler.GetCourseByID(w, r)
+
+				} else if r.Method == "PUT" {
+					courseHandler.UpdateCourse(w, r)
+
+				} else if r.Method == "DELETE" {
+					courseHandler.DeleteCourse(w, r)
+
+				} else {
+					nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
+				}
+			},
+
+			httpDelivery.LoggingMiddleware(db),
+			apiKeyMiddleware.Handle,
+			httpDelivery.RateLimitMiddleware(db),
+			httpDelivery.QuotaMiddleware(db),
+		),
+	)
+
+	// ---------------- CATEGORY ----------------
+
+	nethttp.HandleFunc("/api/v1/courses/category",
+		httpDelivery.Chain(
+			courseHandler.GetCoursesByCategory,
+
+			httpDelivery.LoggingMiddleware(db),
+			apiKeyMiddleware.Handle,
+			httpDelivery.RateLimitMiddleware(db),
+			httpDelivery.QuotaMiddleware(db),
+		),
+	)
+
+	// ---------------- USAGE ----------------
+
+	nethttp.HandleFunc("/api/v1/usage",
+		httpDelivery.Chain(
+			usageHandler.GetUsage,
+
+			httpDelivery.LoggingMiddleware(db),
+			apiKeyMiddleware.Handle,
+			httpDelivery.RateLimitMiddleware(db),
+			httpDelivery.QuotaMiddleware(db),
+		),
+	)
 
 	fmt.Println("Server running on port 8080...")
+
 	log.Fatal(nethttp.ListenAndServe(":8080", nil))
 }

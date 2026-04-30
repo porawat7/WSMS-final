@@ -1,52 +1,79 @@
--- สร้างตาราง users
+
 CREATE TABLE users (
-   id SERIAL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255),
   email VARCHAR(255) UNIQUE,
   password VARCHAR(255),
-  status VARCHAR(255),
-  numrequest int,
+  status VARCHAR(50),
+  numrequest INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- สร้างตาราง admins
-CREATE TABLE admins (
-   id SERIAL PRIMARY KEY,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE,
-  password VARCHAR(255),
+CREATE TABLE api_keys (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  api_key TEXT UNIQUE NOT NULL,
+  name TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE api_usage (
+  id SERIAL PRIMARY KEY,
+  api_key TEXT,
+  endpoint TEXT,
+  method TEXT,
+  status_code INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE categories (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100)
+);
 
 CREATE TABLE courses (
-   id SERIAL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255),
-  category VARCHAR(100),
+  category_id INT REFERENCES categories(id),
   price INT,
   description TEXT,
   platform VARCHAR(100),
   link TEXT,
-  startDate DATE,
+  start_date DATE,
   time VARCHAR(50)
 );
 
+INSERT INTO categories (name) VALUES
+('Coding'),
+('Design'),
+('Business');
 
--- เพิ่มข้อมูล courses
-INSERT INTO courses (name, category, price, description, platform, link, startDate, time)
-VALUES
-('Fullstack JavaScript', 'Coding', 3000, 'เรียน Node.js + React ครบ', 'Zoom', 'https://zoom.us/2', '2026-06-01', '18:00-21:00'),
-('Graphic Design Basics', 'Design', 1500, 'พื้นฐาน Photoshop และ Illustrator', 'Meet', 'https://meet.google.com/2', '2026-06-05', '19:00-21:00'),
-('Digital Marketing', 'Business', 2800, 'การตลาดออนไลน์ครบทุกช่องทาง', 'Website', 'https://example.com/marketing', '2026-06-10', '20:00-22:00'),
-('Python for Data Science', 'Coding', 3500, 'Python + วิเคราะห์ข้อมูล', 'Zoom', 'https://zoom.us/3', '2026-06-15', '18:00-21:00'),
-('UI Design Masterclass', 'Design', 4000, 'ออกแบบ UI ระดับมืออาชีพ', 'Meet', 'https://meet.google.com/3', '2026-06-20', '19:00-22:00');
 
--- USERS
-INSERT INTO users (name, email, password,status,numrequest) VALUES
-('User One', 'user1@example.com', '123456', 'basic',0),
-('User Two', 'user2@example.com', '123456', 'basic',0);
+INSERT INTO users (name, email, password,status) VALUES
+('User One', 'user1@example.com', '123456', 'basic'),
+('User Two', 'user2@example.com', '123456', 'basic');
 
--- ADMINS
-INSERT INTO admins (name, email, password) VALUES
-('Admin One', 'admin1@example.com', '123456'),
-('Admin Two', 'admin2@example.com', '123456');
+
+-- Insert sample courses
+INSERT INTO courses (name, category_id, price, description, platform, link, start_date, time) VALUES
+('Fullstack JavaScript', 1, 3000, 'เรียน Node.js + React ครบ', 'Zoom', 'https://zoom.us/2', '2026-06-01', '18:00-21:00');
+('Python for Beginners', 1, 500, 'เรียนรู้ Python ตั้งแต่พื้นฐาน.', 'Udemy', 'https://udemy.com/python-for-beginners', '2026-05-01', '10:00 AM'),
+('Advanced JavaScript', 1, 700, 'เจาะลึก JavaScript.', 'Coursera', 'https://coursera.org/advanced-javascript', '2026-05-02', '2:00 PM'),
+('UI/UX Design Basics', 2, 400, 'แนะนำการออกแบบ UI/UX.', 'Skillshare', 'https://skillshare.com/uiux-basics', '2026-05-03', '9:00 AM'),
+('Digital Marketing 101', 3, 600, 'เรียนรู้พื้นฐานการตลาดดิจิทัล.', 'Udemy', 'https://udemy.com/digital-marketing-101', '2026-05-04', '11:00 AM'),
+('React for Beginners', 1, 550, 'เรียนรู้ React ทีละขั้นตอน.', 'Udemy', 'https://udemy.com/react-for-beginners', '2026-05-05', '1:00 PM'),
+('Graphic Design Masterclass', 2, 800, 'เรียนรู้เครื่องมือออกแบบกราฟิก.', 'Coursera', 'https://coursera.org/graphic-design-masterclass', '2026-05-06', '3:00 PM'),
+('Entrepreneurship Essentials', 3, 750, 'เริ่มต้นธุรกิจของคุณเอง.', 'Skillshare', 'https://skillshare.com/entrepreneurship-essentials', '2026-05-07', '10:00 AM'),
+('Data Science Bootcamp', 1, 1000, 'กลายเป็นนักวิทยาศาสตร์ข้อมูล.', 'Udemy', 'https://udemy.com/data-science-bootcamp', '2026-05-08', '4:00 PM'),
+('Illustrator for Beginners', 2, 450, 'เรียนรู้ Adobe Illustrator.', 'Skillshare', 'https://skillshare.com/illustrator-for-beginners', '2026-05-09', '11:00 AM'),
+('Financial Analysis', 3, 650, 'วิเคราะห์ข้อมูลทางการเงิน.', 'Coursera', 'https://coursera.org/financial-analysis', '2026-05-10', '2:00 PM'),
+('Machine Learning Basics', 1, 900, 'แนะนำการเรียนรู้ของเครื่อง.', 'Udemy', 'https://udemy.com/machine-learning-basics', '2026-05-11', '10:00 AM'),
+('Photoshop Essentials', 2, 500, 'เรียนรู้ Adobe Photoshop.', 'Skillshare', 'https://skillshare.com/photoshop-essentials', '2026-05-12', '1:00 PM'),
+('Leadership Skills', 3, 700, 'พัฒนาคุณสมบัติความเป็นผู้นำ.', 'Coursera', 'https://coursera.org/leadership-skills', '2026-05-13', '3:00 PM'),
+('Full-Stack Development', 1, 1200, 'กลายเป็นนักพัฒนา Full-Stack.', 'Udemy', 'https://udemy.com/full-stack-development', '2026-05-14', '9:00 AM'),
+('Typography Design', 2, 550, 'เรียนรู้การออกแบบตัวอักษร.', 'Skillshare', 'https://skillshare.com/typography-design', '2026-05-15', '11:00 AM'),
+('Project Management', 3, 800, 'จัดการโครงการอย่างมีประสิทธิภาพ.', 'Coursera', 'https://coursera.org/project-management', '2026-05-16', '2:00 PM'),
+('Angular for Beginners', 1, 600, 'เรียนรู้ Angular ทีละขั้นตอน.', 'Udemy', 'https://udemy.com/angular-for-beginners', '2026-05-17', '10:00 AM'),
+('3D Modeling Basics', 2, 700, 'แนะนำการสร้างโมเดล 3D.', 'Skillshare', 'https://skillshare.com/3d-modeling-basics', '2026-05-18', '1:00 PM'),
+('Startup Funding', 3, 900, 'หาทุนสำหรับสตาร์ทอัพ.', 'Coursera', 'https://coursera.org/startup-funding', '2026-05-19', '3:00 PM'),
+('Cloud Computing', 1, 950, 'เรียนรู้พื้นฐาน Cloud Computing.', 'Udemy', 'https://udemy.com/cloud-computing', '2026-05-20', '4:00 PM');
