@@ -3,21 +3,37 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  // สร้าง state เพื่อเก็บข้อมูล user
   const [user, setUser] = useState(null);
 
-  // ใช้ useEffect เพื่อเช็กข้อมูล user ทุกครั้งที่หน้าเว็บโหลดหรือมีการเปลี่ยนแปลง
   useEffect(() => {
-    const loggedInUser = localStorage.getItem('user');
-    if (loggedInUser) {
-      setUser(JSON.parse(loggedInUser));
-    }
+    const loadUser = () => {
+      const loggedInUser = localStorage.getItem('user');
+      setUser(loggedInUser ? JSON.parse(loggedInUser) : null);
+    };
+
+    // โหลดตอน mount
+    loadUser();
+
+    // 🔥 ฟัง event ตอน login/logout (tab อื่น)
+    window.addEventListener('storage', loadUser);
+
+    // 🔥 ฟัง event custom (tab เดียวกัน)
+    window.addEventListener('userChanged', loadUser);
+
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      window.removeEventListener('userChanged', loadUser);
+    };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('user'); // ลบข้อมูล user ออกจากเครื่อง
-    setUser(null); // เคลียร์ state
-    navigate('/'); // กลับไปหน้าหลัก
+    localStorage.removeItem('user');
+
+    // 🔥 trigger update navbar
+    window.dispatchEvent(new Event('userChanged'));
+
+    setUser(null);
+    navigate('/');
   };
 
   return (
@@ -42,13 +58,14 @@ const Navbar = () => {
         <Link to="/pricing" style={menuStyle}>Package</Link>
         <Link to="/dashboard" style={menuStyle}>Dashboard</Link>
         
-        {/* Logic สลับปุ่ม Log-in / Logout */}
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontSize: '14px', opacity: 0.8 }}>{user.email}</span>
+            <span style={{ fontSize: '14px', opacity: 0.8 }}>
+              {user.email}
+            </span>
             <button 
               onClick={handleLogout}
-              style={{ ...btnStyle, backgroundColor: '#ff4d4d' }} // สีแดงสำหรับ Logout
+              style={{ ...btnStyle, backgroundColor: '#ff4d4d' }}
             >
               Logout
             </button>
@@ -56,7 +73,7 @@ const Navbar = () => {
         ) : (
           <button 
             onClick={() => navigate('/login')}
-            style={{ ...btnStyle, backgroundColor: '#00CED1' }} // สีฟ้าสำหรับ Log-in
+            style={{ ...btnStyle, backgroundColor: '#00CED1' }}
           >
             Log-in
           </button>

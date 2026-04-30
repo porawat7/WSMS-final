@@ -32,112 +32,125 @@ func main() {
 
 	apiKeyRepo := repository.NewAPIKeyRepository(db)
 	apiKeyUsecase := usecase.NewAPIKeyUsecase(apiKeyRepo)
+
 	apiKeyMiddleware := httpDelivery.NewAPIKeyMiddleware(apiKeyUsecase)
-	apiKeyHandler := httpDelivery.NewAPIKeyHandler(apiKeyUsecase)
 
 	// ---------------- COURSE ----------------
 
 	courseRepo := repository.NewSQLiteCourseRepository(db)
 	courseUsecase := usecase.NewCourseUsecase(courseRepo)
-
-	// ✅ เปลี่ยนตรงนี้
 	courseHandler := httpDelivery.NewCourseHandler(courseUsecase)
 
-	// ---------------- AUTH ----------------
+	// ---------------- AUTH (🔥 แก้ตรงนี้) ----------------
 
-	authHandler := httpDelivery.NewAuthHandler(db)
+	authHandler := httpDelivery.NewAuthHandler(db, apiKeyUsecase)
 
 	// ---------------- USAGE ----------------
 
 	usageHandler := httpDelivery.NewUsageHandler(db)
 
-	// ---------------- ROUTES ----------------
+	// ---------------- LOGIN ----------------
 
-	// login
-	nethttp.HandleFunc("/api/v1/login", authHandler.Login)
-
-	// create API KEY
-	nethttp.HandleFunc("/api/v1/api-keys", apiKeyHandler.CreateKey)
+	nethttp.HandleFunc(
+		"/api/v1/login",
+		httpDelivery.CORSMiddleware(authHandler.Login),
+	)
 
 	// ---------------- COURSES ----------------
 
-	nethttp.HandleFunc("/api/v1/courses",
-		httpDelivery.Chain(
-			func(w nethttp.ResponseWriter, r *nethttp.Request) {
+	nethttp.HandleFunc(
+		"/api/v1/courses",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
 
-				if r.Method == "GET" {
-					courseHandler.GetAllCourses(w, r)
+				func(w nethttp.ResponseWriter, r *nethttp.Request) {
 
-				} else if r.Method == "POST" {
-					courseHandler.CreateCourse(w, r)
+					if r.Method == "GET" {
+						courseHandler.GetAllCourses(w, r)
 
-				} else {
-					nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
-				}
-			},
+					} else if r.Method == "POST" {
+						courseHandler.CreateCourse(w, r)
 
-			// middleware เรียงลำดับ
-			httpDelivery.LoggingMiddleware(db),
-			apiKeyMiddleware.Handle,
-			httpDelivery.RateLimitMiddleware(db),
-			httpDelivery.QuotaMiddleware(db),
+					} else {
+						nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
+					}
+				},
+
+				// 🔥 ลำดับต้องแบบนี้
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
 		),
 	)
 
 	// ---------------- COURSE BY ID ----------------
 
-	nethttp.HandleFunc("/api/v1/course",
-		httpDelivery.Chain(
-			func(w nethttp.ResponseWriter, r *nethttp.Request) {
+	nethttp.HandleFunc(
+		"/api/v1/course",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
 
-				if r.Method == "GET" {
-					courseHandler.GetCourseByID(w, r)
+				func(w nethttp.ResponseWriter, r *nethttp.Request) {
 
-				} else if r.Method == "PUT" {
-					courseHandler.UpdateCourse(w, r)
+					if r.Method == "GET" {
+						courseHandler.GetCourseByID(w, r)
 
-				} else if r.Method == "DELETE" {
-					courseHandler.DeleteCourse(w, r)
+					} else if r.Method == "PUT" {
+						courseHandler.UpdateCourse(w, r)
 
-				} else {
-					nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
-				}
-			},
+					} else if r.Method == "DELETE" {
+						courseHandler.DeleteCourse(w, r)
 
-			httpDelivery.LoggingMiddleware(db),
-			apiKeyMiddleware.Handle,
-			httpDelivery.RateLimitMiddleware(db),
-			httpDelivery.QuotaMiddleware(db),
+					} else {
+						nethttp.Error(w, "Method not allowed", nethttp.StatusMethodNotAllowed)
+					}
+				},
+
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
 		),
 	)
 
 	// ---------------- CATEGORY ----------------
 
-	nethttp.HandleFunc("/api/v1/courses/category",
-		httpDelivery.Chain(
-			courseHandler.GetCoursesByCategory,
+	nethttp.HandleFunc(
+		"/api/v1/courses/category",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
 
-			httpDelivery.LoggingMiddleware(db),
-			apiKeyMiddleware.Handle,
-			httpDelivery.RateLimitMiddleware(db),
-			httpDelivery.QuotaMiddleware(db),
+				courseHandler.GetCoursesByCategory,
+
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
 		),
 	)
 
 	// ---------------- USAGE ----------------
 
-	nethttp.HandleFunc("/api/v1/usage",
-		httpDelivery.Chain(
-			usageHandler.GetUsage,
+	nethttp.HandleFunc(
+		"/api/v1/usage",
+		httpDelivery.CORSMiddleware(
+			httpDelivery.Chain(
 
-			httpDelivery.LoggingMiddleware(db),
-			apiKeyMiddleware.Handle,
-			httpDelivery.RateLimitMiddleware(db),
-			httpDelivery.QuotaMiddleware(db),
+				usageHandler.GetUsage,
+
+				apiKeyMiddleware.Handle,
+				httpDelivery.LoggingMiddleware(db),
+				httpDelivery.RateLimitMiddleware(db),
+				httpDelivery.QuotaMiddleware(db),
+			),
 		),
 	)
 
-	fmt.Println("Server running on port 8080...")
+	fmt.Println("Server running on port 8081...")
 
-	log.Fatal(nethttp.ListenAndServe(":8080", nil))
+	log.Fatal(nethttp.ListenAndServe(":8081", nil))
 }

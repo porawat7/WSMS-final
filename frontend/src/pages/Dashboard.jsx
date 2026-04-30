@@ -1,61 +1,92 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  
-  // ดึงข้อมูล User และตั้งค่าสำรองป้องกัน Error
-  const user = JSON.parse(localStorage.getItem('user')) || { 
-    email: '-', 
+
+  const user = JSON.parse(localStorage.getItem('user')) || {
+    email: '-',
     status: 'basic',
-    name: 'User',
-    numrequest: 0 
+    name: 'User'
   };
 
-  // ป้องกัน Error toUpperCase หาก status เป็นค่าว่าง
+  const apiKey = localStorage.getItem('apiKey') || '';
+
+  const [usage, setUsage] = useState(0);
+  const [limit, setLimit] = useState(1000);
+
   const displayStatus = user.status ? user.status.toUpperCase() : 'BASIC';
+
+  // 🔥 fetch usage จาก backend
+  useEffect(() => {
+    const fetchUsage = async () => {
+      try {
+        const res = await fetch('http://localhost:8081/api/v1/usage', {
+          headers: {
+            'x-api-key': apiKey
+          }
+        });
+
+        const data = await res.json();
+
+        setUsage(data.used || 0);
+        setLimit(data.limit || 1000);
+
+      } catch (err) {
+        console.error('Failed to fetch usage:', err);
+      }
+    };
+
+    if (apiKey) fetchUsage();
+  }, [apiKey]);
+
+  const remaining = displayStatus === 'GOLD' ? 'Unlimited' : (limit - usage);
+  const percent = displayStatus === 'GOLD' ? 100 : Math.min((usage / limit) * 100, 100);
 
   return (
     <div style={{ backgroundColor: '#f8faff', minHeight: '100vh', padding: '40px 20px', fontFamily: 'sans-serif' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        
-        {/* Header Section */}
+
+        {/* Header */}
         <div style={{ marginBottom: '30px' }}>
           <span style={{ backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>Overview</span>
           <h1 style={{ fontSize: '32px', margin: '10px 0 5px 0', color: '#1e293b', fontWeight: 'bold' }}>Course API Dashboard</h1>
-          <p style={{ color: '#64748b', fontSize: '14px' }}>ยินดีต้อนรับคุณ {user.name} | ติดตามสถานะการใช้งานและจัดการแพ็กเกจของคุณ</p>
+          <p style={{ color: '#64748b', fontSize: '14px' }}>
+            ยินดีต้อนรับคุณ {user.name} | ติดตามสถานะการใช้งานและจัดการแพ็กเกจของคุณ
+          </p>
         </div>
 
-        {/* Top Stat Cards */}
+        {/* Top Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
           <StatCard title="Current Plan" value={displayStatus} />
-          <StatCard title="Requests Used" value={user.numrequest || 0} />
-          <StatCard title="Remaining Quota" value={displayStatus === 'GOLD' ? 'Unlimited' : (1000 - (user.numrequest || 0))} />
+          <StatCard title="Requests Used" value={usage} />
+          <StatCard title="Remaining Quota" value={remaining} />
           <StatCard title="Account Owner" value={user.email} isEmail />
         </div>
 
-        {/* Main Section */}
+        {/* Main */}
         <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '20px' }}>
-          
-          {/* Left Column: Usage Details */}
+
+          {/* Left */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
             <div style={whiteCardStyle}>
               <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>API Usage Overview</h3>
               <p style={{ fontSize: '12px', color: '#64748b' }}>โควตารายเดือนของคุณ</p>
-              
-              {/* Progress Bar */}
+
+              {/* Progress */}
               <div style={{ width: '100%', height: '10px', background: '#f1f5f9', borderRadius: '10px', margin: '15px 0' }}>
-                <div style={{ 
-                  width: displayStatus === 'GOLD' ? '100%' : '1.2%', 
-                  height: '100%', 
-                  background: '#0047AB', 
-                  borderRadius: '10px' 
-                }}></div>
+                <div style={{
+                  width: `${percent}%`,
+                  height: '100%',
+                  background: '#0047AB',
+                  borderRadius: '10px'
+                }} />
               </div>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
-                <SmallInfoBox label="Used" value={user.numrequest || 0} />
-                <SmallInfoBox label="Limit" value={displayStatus === 'GOLD' ? '∞' : '1000'} />
+                <SmallInfoBox label="Used" value={usage} />
+                <SmallInfoBox label="Limit" value={displayStatus === 'GOLD' ? '∞' : limit} />
                 <SmallInfoBox label="Status" value="Active" color="#10b981" />
               </div>
             </div>
@@ -67,14 +98,19 @@ const Dashboard = () => {
                 <SmallInfoBox label="Next Update" value="30 May 2026" />
               </div>
             </div>
+
           </div>
 
-          {/* Right Column: Actions */}
+          {/* Right */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={whiteCardStyle}>
               <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>Quick Actions</h3>
-              <button onClick={() => navigate('/pricing')} style={primaryBtn}>Upgrade Package</button>
-              <button onClick={() => navigate('/api-products')} style={secondaryBtn}>View API Catalog</button>
+              <button onClick={() => navigate('/pricing')} style={primaryBtn}>
+                Upgrade Package
+              </button>
+              <button onClick={() => navigate('/api-products')} style={secondaryBtn}>
+                View API Catalog
+              </button>
             </div>
           </div>
 
@@ -84,31 +120,47 @@ const Dashboard = () => {
   );
 };
 
-// --- Sub-Components ---
+// --- Components ---
 const StatCard = ({ title, value, isEmail }) => (
-  <div style={{ background: 'white', padding: '24px', borderRadius: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #f1f5f9' }}>
-    <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: '600' }}>{title}</p>
-    <h2 style={{ margin: '12px 0 0 0', fontSize: isEmail ? '14px' : '28px', color: '#1e293b', wordBreak: 'break-all', fontWeight: 'bold' }}>{value}</h2>
+  <div style={{ background: 'white', padding: '24px', borderRadius: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+    <p style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>{title}</p>
+    <h2 style={{ fontSize: isEmail ? '14px' : '28px', fontWeight: 'bold', marginTop: '10px' }}>{value}</h2>
   </div>
 );
 
 const SmallInfoBox = ({ label, value, color }) => (
-  <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-    <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 'bold' }}>{label.toUpperCase()}</p>
-    <p style={{ margin: '6px 0 0 0', fontSize: '16px', fontWeight: 'bold', color: color || '#1e293b' }}>{value}</p>
+  <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
+    <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'bold' }}>{label.toUpperCase()}</p>
+    <p style={{ fontSize: '16px', fontWeight: 'bold', color: color || '#1e293b' }}>{value}</p>
   </div>
 );
 
 const whiteCardStyle = {
-  background: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #f1f5f9'
+  background: 'white',
+  padding: '30px',
+  borderRadius: '24px',
+  boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
 };
 
 const primaryBtn = {
-  width: '100%', padding: '14px', backgroundColor: '#0047AB', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '12px'
+  width: '100%',
+  padding: '14px',
+  backgroundColor: '#0047AB',
+  color: 'white',
+  border: 'none',
+  borderRadius: '12px',
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  marginBottom: '12px'
 };
 
 const secondaryBtn = {
-  width: '100%', padding: '14px', backgroundColor: 'transparent', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', marginBottom: '12px'
+  width: '100%',
+  padding: '14px',
+  backgroundColor: 'transparent',
+  border: '1px solid #e2e8f0',
+  borderRadius: '12px',
+  cursor: 'pointer'
 };
 
 export default Dashboard;

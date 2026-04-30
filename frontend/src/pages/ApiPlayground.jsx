@@ -1,98 +1,138 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
+const BASE_URL = "http://localhost:8081";
+
 const ApiPlayground = () => {
   const location = useLocation();
-  const initialApi = location.state || { title: 'Course Catalog', endpoint: 'http://localhost:8080/courses' };
 
-  const [response, setResponse] = useState(null);
+  const initialApi = location.state || {
+    title: 'Course Catalog',
+    endpoint: 'GET /api/v1/courses'
+  };
+
+  const [method, setMethod] = useState(initialApi.endpoint.split(' ')[0] || 'GET');
+  const [endpoint, setEndpoint] = useState(initialApi.endpoint.split(' ')[1] || '/api/v1/courses');
+  const [body, setBody] = useState('');
+  const [response, setResponse] = useState('Ready to test API');
+  const [status, setStatus] = useState('Idle');
+
+  const runAPI = async () => {
+    try {
+      setStatus('Loading...');
+
+      const fullUrl = endpoint.startsWith('http')
+        ? endpoint
+        : BASE_URL + endpoint;
+
+      const apiKey = localStorage.getItem('apiKey');
+
+      console.log("API KEY:", apiKey); // debug
+
+      const res = await fetch(fullUrl, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey || ''
+        },
+        body: method !== 'GET' ? body : undefined
+      });
+
+      const text = await res.text();
+
+      let formatted;
+      try {
+        formatted = JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        formatted = text;
+      }
+
+      setResponse(formatted);
+      setStatus(`Status: ${res.status}`);
+    } catch (err) {
+      setResponse(err.message);
+      setStatus('Error');
+    }
+  };
 
   return (
     <div style={{ backgroundColor: '#f1f5f9', minHeight: '100vh', paddingBottom: '50px', fontFamily: 'sans-serif' }}>
-      
-      {/* ส่วนหัว Playground (อิงตามรูป) */}
+
+      {/* Header */}
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '60px 20px 20px 20px' }}>
-        <p style={{ color: '#38bdf8', letterSpacing: '1px', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>
+        <p style={{ color: '#38bdf8', fontSize: '14px', fontWeight: 'bold' }}>
           INTERACTIVE TESTING
         </p>
-        <h1 style={{ fontSize: '42px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' }}>
+        <h1 style={{ fontSize: '42px', fontWeight: 'bold', color: '#1e293b' }}>
           API Playground
         </h1>
-        <p style={{ color: '#64748b', fontSize: '15px', lineHeight: '1.6', maxWidth: '800px' }}>
-          ทดลองเรียก API คอร์สเรียนได้ที่หน้านี้ เลือก endpoint, แก้ request body แล้วดูผล response ได้ทันที หากเรียกไม่ได้ให้ตรวจสอบว่า backend ของคุณกำลังรันอยู่ที่ localhost:8080
+        <p style={{ color: '#64748b', fontSize: '15px' }}>
+          ทดลองเรียก API ได้ที่นี่
         </p>
       </div>
 
-      {/* Main Container สำหรับ Request และ Response */}
       <div style={{ 
-        maxWidth: '1100px', 
-        margin: '20px auto', 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '30px', 
-        padding: '0 20px' 
+        maxWidth: '1100px',
+        margin: '20px auto',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '30px',
+        padding: '0 20px'
       }}>
-        
-        {/* ฝั่ง REQUEST (Card ซ้าย) */}
+
+        {/* REQUEST */}
         <div style={cardStyle}>
           <p style={sectionTitleStyle}>REQUEST</p>
-          
+
           <div style={inputGroup}>
-            <label style={labelStyle}>API Product</label>
-            <select style={inputStyle} defaultValue={initialApi.id || 'catalog'}>
-              <option value="catalog">Course Catalog</option>
-              <option value="search">Search by Category</option>
-              <option value="names">Course Names List</option>
+            <label style={labelStyle}>Method</label>
+            <select value={method} onChange={(e) => setMethod(e.target.value)} style={inputStyle}>
+              <option>GET</option>
+              <option>POST</option>
+              <option>PUT</option>
+              <option>DELETE</option>
             </select>
           </div>
 
           <div style={inputGroup}>
-            <label style={labelStyle}>Method</label>
-            <input style={inputStyle} value="GET" readOnly />
-          </div>
-
-          <div style={inputGroup}>
             <label style={labelStyle}>Endpoint</label>
-            <input 
-                style={inputStyle} 
-                defaultValue={initialApi.endpoint ? `http://localhost:8080${initialApi.endpoint.split(' ')[1] || '/courses'}` : 'http://localhost:8080/courses'} 
+            <input
+              value={endpoint}
+              onChange={(e) => setEndpoint(e.target.value)}
+              style={inputStyle}
+              placeholder="/api/v1/courses"
             />
           </div>
 
           <div style={inputGroup}>
             <label style={labelStyle}>Request Body</label>
-            <textarea 
-                style={{ ...inputStyle, height: '180px', resize: 'none' }} 
-                placeholder=""
-            ></textarea>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              style={{ ...inputStyle, height: '150px' }}
+              placeholder='{"title":"React Course"}'
+            />
           </div>
 
-          <button 
-            style={runBtnStyle} 
-            onClick={() => setResponse('Ready to test API')}
-          >
+          <button style={runBtnStyle} onClick={runAPI}>
             Run API
           </button>
-          
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '15px', lineHeight: '1.4' }}>
-            หมายเหตุ: จุดนี้ช่วยให้คุณลองเรียก API คอร์สเรียนได้ ถ้า backend ยังไม่รัน หรือไม่มี endpoint จะเห็น error ใน response
+
+          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '10px' }}>
+            * ต้องมี API Key ใน localStorage
           </p>
         </div>
 
-        {/* ฝั่ง RESPONSE (Card ขวา) */}
+        {/* RESPONSE */}
         <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <p style={sectionTitleStyle}>RESPONSE</p>
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Idle</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>{status}</span>
           </div>
-          
-          <p style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '15px' }}>
-            ผลลัพธ์ที่ได้จากการเรียก API
-          </p>
 
           <div style={darkResponseBox}>
-            <pre style={{ margin: 0, fontSize: '14px', color: '#cbd5e1' }}>
-              {response || 'Ready to test API'}
+            <pre style={{ color: '#cbd5e1', margin: 0 }}>
+              {response}
             </pre>
           </div>
         </div>
@@ -102,68 +142,51 @@ const ApiPlayground = () => {
   );
 };
 
-// --- Styles อิงตามรูปภาพที่ Fern ส่งมา ---
+// styles
 const cardStyle = {
   backgroundColor: 'white',
-  padding: '35px',
-  borderRadius: '24px',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-  display: 'flex',
-  flexDirection: 'column'
+  padding: '30px',
+  borderRadius: '20px',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
 };
 
 const sectionTitleStyle = {
   fontSize: '12px',
   fontWeight: 'bold',
   color: '#94a3b8',
-  letterSpacing: '1px',
   marginBottom: '15px'
 };
 
-const inputGroup = {
-  marginBottom: '18px'
-};
+const inputGroup = { marginBottom: '15px' };
 
 const labelStyle = {
-  display: 'block',
   fontSize: '13px',
   fontWeight: 'bold',
-  color: '#1e293b',
-  marginBottom: '8px'
+  marginBottom: '5px'
 };
 
 const inputStyle = {
   width: '100%',
-  padding: '12px 15px',
+  padding: '10px',
   borderRadius: '10px',
-  border: '1px solid #e2e8f0',
-  fontSize: '14px',
-  color: '#475569',
-  backgroundColor: '#fff',
-  outline: 'none',
-  boxSizing: 'border-box'
+  border: '1px solid #e2e8f0'
 };
 
 const runBtnStyle = {
-  width: '100%',
-  padding: '14px',
-  backgroundColor: '#2563eb', // สีน้ำเงินตามรูป
+  marginTop: '10px',
+  padding: '12px',
+  backgroundColor: '#2563eb',
   color: 'white',
   border: 'none',
-  borderRadius: '12px',
-  fontWeight: 'bold',
-  fontSize: '16px',
-  cursor: 'pointer',
-  transition: 'background 0.2s'
+  borderRadius: '10px',
+  cursor: 'pointer'
 };
 
 const darkResponseBox = {
-  backgroundColor: '#0f172a', // พื้นหลังดำตามรูป
+  backgroundColor: '#0f172a',
   borderRadius: '15px',
-  padding: '25px',
-  minHeight: '400px',
-  flexGrow: 1,
-  overflowY: 'auto'
+  padding: '20px',
+  minHeight: '400px'
 };
 
 export default ApiPlayground;

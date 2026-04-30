@@ -10,21 +10,21 @@ const ApiProducts = () => {
       title: 'Course Catalog API',
       description: 'ดึงรายชื่อคอร์สเรียนทั้งหมดที่มีในระบบ พร้อมหมวดหมู่ ราคา',
       bestFor: 'แอปเปรียบเทียบคอร์สเรียน หรือหน้า Landing Page ของสถาบัน',
-      endpoint: 'GET /api/v1/courses/all'
+      endpoint: 'GET /api/v1/courses'
     },
     {
       id: 'search',
       title: 'Search by Category',
-      description: 'ดึงรายชื่อคอร์สเรียนแยกตามประเภทที่ต้องการ พร้อมรายละเอียดแพลตฟอร์มการเรียน',
+      description: 'ดึงรายชื่อคอร์สเรียนแยกตามประเภทที่ต้องการ',
       bestFor: 'หน้าแสดงผลเฉพาะหมวดหมู่ที่สนใจ',
-      endpoint: 'GET /api/v1/courses?category=Coding'
+      endpoint: 'GET /api/v1/courses/category?category=Coding'
     },
     {
-      id: 'names',
-      title: 'Course Names List',
-      description: 'ดึงเฉพาะรายชื่อวิชาทั้งหมดที่มีในระบบ',
-      bestFor: 'ระบบค้นหาอัตโนมัติ (Autocomplete)',
-      endpoint: 'GET /api/v1/courses/names'
+      id: 'courseById',
+      title: 'Course by ID',
+      description: 'ดึงข้อมูลคอร์สตาม ID (รองรับ update และ delete)',
+      bestFor: 'หน้าแสดงรายละเอียดคอร์ส',
+      endpoint: 'GET /api/v1/course?id=1'
     }
   ];
 
@@ -51,7 +51,8 @@ const ApiProducts = () => {
         }}>
           {apiList.map((api) => (
             <div key={api.id} style={cardStyle}>
-              {/* ส่วนเนื้อหาด้านบน */}
+              
+              {/* Content */}
               <div style={{ flexGrow: 1 }}>
                 <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', textAlign: 'center', marginBottom: '25px' }}>
                   {api.title}
@@ -72,7 +73,7 @@ const ApiProducts = () => {
                 </div>
               </div>
 
-              {/* ส่วนปุ่มด้านล่าง - จะถูกดันลงมาล่างสุดเสมอด้วย flexbox */}
+              {/* Button */}
               <div style={{ textAlign: 'right', marginTop: '30px' }}>
                 <button 
                   onClick={() => navigate('/playground', { state: api })}
@@ -96,9 +97,9 @@ const cardStyle = {
   borderRadius: '35px',
   boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
   border: '1px solid #f1f5f9',
-  display: 'flex',           // ใช้ Flexbox เพื่อให้จัดการความสูงภายในได้
-  flexDirection: 'column',   // แนวตั้ง
-  justifyContent: 'space-between', // กระจายเนื้อหาให้ปุ่มอยู่ล่างสุด
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
   transition: 'transform 0.3s ease',
 };
 

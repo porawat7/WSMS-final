@@ -35,16 +35,16 @@ var quotaLimits = map[string]int{
 
 var rateLimits = map[string]RateConfig{
 	"basic": {
-		RPS:   5,
-		Burst: 10,
+		RPS:   rate.Every(time.Minute / 15),
+		Burst: 15,
 	},
 	"silver": {
-		RPS:   20,
-		Burst: 30,
+		RPS:   rate.Every(time.Minute / 100),
+		Burst: 100,
 	},
 	"gold": {
-		RPS:   100,
-		Burst: 150,
+		RPS:   rate.Every(time.Minute / 1000),
+		Burst: 1000,
 	},
 }
 
@@ -58,22 +58,18 @@ var visitors = make(map[string]*visitor)
 var mu sync.Mutex
 
 func getLimiter(apiKey string, status string) *rate.Limiter {
-
 	mu.Lock()
 	defer mu.Unlock()
 
 	v, exists := visitors[apiKey]
 
 	if !exists {
-
 		cfg := rateLimits[status]
-
 		limiter := rate.NewLimiter(cfg.RPS, cfg.Burst)
 
 		visitors[apiKey] = &visitor{
 			limiter: limiter,
 		}
-
 		return limiter
 	}
 
@@ -83,10 +79,13 @@ func getLimiter(apiKey string, status string) *rate.Limiter {
 // ---------------- API KEY ----------------
 
 func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		key := r.Header.Get("x-api-key")
+		// 🔥 FIX สำคัญ: ใช้ X-API-Key
+		key := r.Header.Get("X-API-Key")
+
+		// debug (ดูใน terminal)
+		println("API KEY:", key)
 
 		if key == "" {
 			http.Error(w, "Missing API Key", http.StatusUnauthorized)
@@ -94,7 +93,6 @@ func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		userID, err := m.usecase.ValidateKey(key)
-
 		if err != nil {
 			http.Error(w, "Invalid API Key", http.StatusUnauthorized)
 			return
@@ -110,13 +108,10 @@ func (m *APIKeyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 // ---------------- RATE LIMIT ----------------
 
 func RateLimitMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
-
 	return func(next http.HandlerFunc) http.HandlerFunc {
-
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			apiKey, ok := r.Context().Value("apiKey").(string)
-
 			if !ok || apiKey == "" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
@@ -151,13 +146,10 @@ func RateLimitMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 // ---------------- QUOTA ----------------
 
 func QuotaMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
-
 	return func(next http.HandlerFunc) http.HandlerFunc {
-
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			apiKey, ok := r.Context().Value("apiKey").(string)
-
 			if !ok || apiKey == "" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
@@ -205,16 +197,14 @@ func QuotaMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 // ---------------- LOGGING ----------------
 
 func LoggingMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
-
 	return func(next http.HandlerFunc) http.HandlerFunc {
-
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			apiKey, _ := r.Context().Value("apiKey").(string)
 
 			next(w, r)
 
-			db.Exec(`
+			_, _ = db.Exec(`
 				INSERT INTO api_usage (
 					api_key,
 					endpoint,
@@ -234,7 +224,7 @@ func LoggingMiddleware(db *sql.DB) func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-
+// ---------------- CHAIN ----------------
 
 func Chain(
 	h http.HandlerFunc,
