@@ -14,10 +14,10 @@ const Navbar = () => {
     // โหลดตอน mount
     loadUser();
 
-    // 🔥 ฟัง event ตอน login/logout (tab อื่น)
+    // 🔥 ฟัง event ข้าม tab
     window.addEventListener('storage', loadUser);
 
-    // 🔥 ฟัง event custom (tab เดียวกัน)
+    // 🔥 ฟัง event ใน tab เดียวกัน
     window.addEventListener('userChanged', loadUser);
 
     return () => {
@@ -29,7 +29,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('user');
 
-    // 🔥 trigger update navbar
+    // 🔥 update navbar
     window.dispatchEvent(new Event('userChanged'));
 
     setUser(null);
@@ -46,18 +46,22 @@ const Navbar = () => {
       color: 'white',
       fontFamily: 'serif' 
     }}>
+      
+      {/* Logo */}
       <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
         <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
           course online
         </Link>
       </div>
 
+      {/* Menu */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
         <Link to="/" style={menuStyle}>หน้าหลัก</Link>
         <Link to="/api-products" style={menuStyle}>API Products</Link>
         <Link to="/pricing" style={menuStyle}>Package</Link>
         <Link to="/dashboard" style={menuStyle}>Dashboard</Link>
-        
+
+        {/* 🔥 Auth Section */}
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <span style={{ fontSize: '14px', opacity: 0.8 }}>
@@ -71,12 +75,25 @@ const Navbar = () => {
             </button>
           </div>
         ) : (
-          <button 
-            onClick={() => navigate('/login')}
-            style={{ ...btnStyle, backgroundColor: '#00CED1' }}
-          >
-            Log-in
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            
+            {/* 🔥 Login */}
+            <button 
+              onClick={() => navigate('/login')}
+              style={{ ...btnStyle, backgroundColor: '#00CED1' }}
+            >
+              Log-in
+            </button>
+
+            {/* 🔥 Register (เพิ่มตรงนี้) */}
+            <button 
+              onClick={() => navigate('/register')}
+              style={{ ...btnStyle, backgroundColor: '#22c55e' }}
+            >
+              Register
+            </button>
+
+          </div>
         )}
       </div>
     </nav>

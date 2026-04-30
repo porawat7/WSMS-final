@@ -17,8 +17,12 @@ const ApiPlayground = () => {
   const [status, setStatus] = useState("Idle");
 
   useEffect(() => {
-    const key = localStorage.getItem("apiKey") || "";
-    setApiKey(key);
+    // 🔥 ดึงจาก user แทน apiKey
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (user?.api_key) {
+      setApiKey(user.api_key);
+    }
 
     if (endpointFromURL) {
       setEndpoint(endpointFromURL);
@@ -39,7 +43,7 @@ const ApiPlayground = () => {
         method,
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
+          "x-api-key": apiKey, // 🔥 ใช้ key ของ user
         },
         body: method !== "GET" ? body : undefined,
       });
@@ -70,15 +74,11 @@ const ApiPlayground = () => {
         <div style={card}>
           <h3>Request</h3>
 
-          {/* ✅ ช่องกรอก API KEY */}
+          {/* 🔥 แสดง API KEY ของ user */}
           <label>API Key</label>
           <input
             value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-              localStorage.setItem("apiKey", e.target.value);
-            }}
-            placeholder="Paste API Key here"
+            readOnly   // 🔥 ไม่ให้แก้ (optional)
             style={input}
           />
 
@@ -96,7 +96,6 @@ const ApiPlayground = () => {
             onChange={(e) => setEndpoint(e.target.value)}
             style={input}
           />
-
 
           {method !== "GET" && (
             <>
@@ -125,8 +124,7 @@ const ApiPlayground = () => {
   );
 };
 
-/* ---------------- styles ---------------- */
-
+/* styles เดิมทั้งหมด */
 const page = {
   fontFamily: "sans-serif",
   padding: "50px",

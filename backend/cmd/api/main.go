@@ -60,6 +60,10 @@ func main() {
 
 	userHandler := httpDelivery.NewUserHandler(db)
 
+	nethttp.HandleFunc(
+	"/api/v1/register",
+	httpDelivery.CORSMiddleware(authHandler.Register),
+)
 	// ---------------- LOGIN ----------------
 
 	nethttp.HandleFunc(
