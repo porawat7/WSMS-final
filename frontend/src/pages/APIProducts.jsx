@@ -28,11 +28,19 @@ const APIProducts = () => {
       plan: "silver",
     },
     {
-      title: "Advanced Search + Filter",
+      title: "Search + Filter",
       description: "ค้นหา + filter พร้อมกัน (Gold เท่านั้น)",
       endpoint: "/api/v1/courses?category_id=1&search=react",
       plan: "gold",
     },
+    
+      {
+      title: "Advanced Course Search",
+      description: "ค้นหา + filter พร้อมกัน (Gold เท่านั้น)",
+      endpoint: "/api/v1/courses?search=react",
+      plan: "gold",
+    },
+    
   ];
 
   return (
@@ -162,6 +170,7 @@ const silverCard = {
 const goldCard = {
   border: "1px solid #f59e0b",
   transform: "scale(1.08)",
+  margin: "0 20px"
 };
 
 /* 🏷 badge */

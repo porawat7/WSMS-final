@@ -95,7 +95,7 @@ const Pricing = () => {
         '10,000 Requests', 
         'Rate limit 500 ครั้ง/นาที',
         'ดู platform + link คอร์ส',
-        'Advanced Search'
+        'Filter + Search'
       ] 
     }
   ];
@@ -205,7 +205,7 @@ const title = {
 const cardRow = {
   display: 'flex',
   justifyContent: 'center',
-  gap: '30px',
+  gap: '40px',
   flexWrap: 'wrap',
   marginTop: '60px'
 };
@@ -253,7 +253,7 @@ const perMonth = {
 const featureList = {
   listStyle: 'none',
   padding: 0,
-  margin: '30px 0'
+  margin: '60px 0'
 };
 
 const featureItem = {

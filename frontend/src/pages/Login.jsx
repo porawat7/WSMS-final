@@ -65,7 +65,7 @@ const Login = () => {
       justifyContent: 'center',
       alignItems: 'center',
       minHeight: '80vh',
-      backgroundColor: '#f8fafc',
+      backgroundColor: '#d7d9db',
     }}>
 
       <div style={{
@@ -134,7 +134,7 @@ const inputStyle = {
   padding: '12px',
   marginTop: '8px',
   borderRadius: '10px',
-  border: '1px solid #e2e8f0',
+  border: '1px solid #dcdddf',
 };
 
 const labelStyle = {
