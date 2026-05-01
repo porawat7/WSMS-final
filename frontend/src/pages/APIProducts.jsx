@@ -11,43 +11,82 @@ const APIProducts = () => {
   const apiList = [
     {
       title: "Course Catalog API",
-      description: "ดึงข้อมูลคอร์สทั้งหมดในระบบ พร้อมรายละเอียด ราคา และหมวดหมู่",
+      description: "ดึงข้อมูลคอร์สทั้งหมดในระบบ",
       endpoint: "/api/v1/courses",
+      plan: "basic",
     },
     {
       title: "All Categories API",
-      description: "ดึงประเภทคอร์สทั้งหมดในระบบ เพื่อนำไปใช้จัดหมวดหมู่การแสดงผล",
+      description: "ดึงประเภทคอร์สทั้งหมด",
       endpoint: "/api/v1/categories",
+      plan: "basic",
     },
     {
       title: "Courses By Category",
-      description: "ดึงคอร์สตามประเภทที่ต้องการ ด้วย query category_id",
+      description: "Filter ตามหมวดหมู่ (Silver ขึ้นไป)",
       endpoint: "/api/v1/courses?category_id=1",
+      plan: "silver",
+    },
+    {
+      title: "Advanced Search + Filter",
+      description: "ค้นหา + filter พร้อมกัน (Gold เท่านั้น)",
+      endpoint: "/api/v1/courses?category_id=1&search=react",
+      plan: "gold",
     },
   ];
 
   return (
     <div style={page}>
-      <h1 style={title}>API Products</h1>
+      <h1 style={title}> 📚 API Products</h1>
 
-      {/* การ์ดเรียงแนวนอน */}
       <div style={cardRow}>
         {apiList.map((api, index) => (
-          <div key={index} style={card}>
-            {/* บน: ชื่อ */}
-            <h3 style={cardTitle}>{api.title}</h3>
+          <div
+            key={index}
+            style={{
+              ...card,
+              ...(api.plan === "silver" && silverCard),
+              ...(api.plan === "gold" && goldCard),
+            }}
+            className="card-hover"
+          >
+            {/* Glow layer */}
+            <div
+              style={{
+                ...glow,
+                ...(api.plan === "silver" && silverGlow),
+                ...(api.plan === "gold" && goldGlow),
+              }}
+            />
 
-            {/* กลาง: คำอธิบาย */}
+            {/* Badge */}
+            {api.plan !== "basic" && (
+              <div
+                style={{
+                  ...badge,
+                  ...(api.plan === "silver" && silverBadge),
+                  ...(api.plan === "gold" && goldBadge),
+                }}
+              >
+                {api.plan.toUpperCase()}
+              </div>
+            )}
+
+            <h3 style={cardTitle}>{api.title}</h3>
             <p style={cardDesc}>{api.description}</p>
 
-            {/* ล่าง: endpoint + ปุ่ม */}
             <div style={bottomBox}>
               <code style={endpoint}>{api.endpoint}</code>
+
               <button
-                style={btn}
+                style={{
+                  ...btn,
+                  ...(api.plan === "silver" && silverBtn),
+                  ...(api.plan === "gold" && goldBtn),
+                }}
                 onClick={() => goPlayground(api.endpoint)}
               >
-                View in Playground
+                View API →
               </button>
             </div>
           </div>
@@ -61,67 +100,137 @@ const APIProducts = () => {
 
 const page = {
   fontFamily: "sans-serif",
-  padding: "80px 40px",
-  background: "#f8fafc",
+  padding: "100px 40px",
+  background: "linear-gradient(135deg, #7d7f85, #1e293b)",
   minHeight: "100vh",
+  color: "white",
 };
 
 const title = {
-  fontSize: "36px",
-  marginBottom: "40px",
+  fontSize: "42px",
+  marginBottom: "60px",
+  textAlign: "center",
 };
 
 const cardRow = {
   display: "flex",
   gap: "30px",
   flexWrap: "wrap",
+  justifyContent: "center",
 };
 
 const card = {
-  flex: "1",
-  minWidth: "320px",
-  background: "white",
+  position: "relative",
+  width: "320px",
   padding: "30px",
-  borderRadius: "18px",
-  border: "1px solid #e2e8f0",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "space-between",
+  borderRadius: "20px",
+  backdropFilter: "blur(10px)",
+  background: "rgba(65, 62, 62, 0.97)",
+  border: "1px solid rgba(151, 146, 146, 0.1)",
+  transition: "all 0.3s ease",
+  overflow: "hidden",
+};
+
+/* 🔥 hover effect */
+card[':hover'] = {
+  transform: "translateY(-10px) scale(1.03)",
+};
+
+/* 🌟 glow layer */
+const glow = {
+  position: "absolute",
+  inset: 0,
+  opacity: 0.3,
+  filter: "blur(40px)",
+  zIndex: 0,
+};
+
+const silverGlow = {
+  background: "#94a3b8",
+};
+
+const goldGlow = {
+  background: "#f59e0b",
+};
+
+/* 🩶 silver */
+const silverCard = {
+  border: "1px solid #94a3b8",
+};
+
+/* 🟨 gold (เด่นกว่า) */
+const goldCard = {
+  border: "1px solid #f59e0b",
+  transform: "scale(1.08)",
+};
+
+/* 🏷 badge */
+const badge = {
+  position: "absolute",
+  top: "15px",
+  right: "15px",
+  padding: "6px 14px",
+  borderRadius: "999px",
+  fontSize: "11px",
+  fontWeight: "bold",
+};
+
+const silverBadge = {
+  background: "#94a3b8",
+  color: "#0f172a",
+};
+
+const goldBadge = {
+  background: "#f59e0b",
+  color: "#000",
 };
 
 const cardTitle = {
   fontSize: "22px",
   marginBottom: "15px",
+  position: "relative",
+  zIndex: 1,
 };
 
 const cardDesc = {
-  color: "#475569",
-  lineHeight: "1.6",
-  marginBottom: "30px",
+  color: "#e0e3ec",
+  marginBottom: "25px",
+  position: "relative",
+  zIndex: 1,
 };
 
 const bottomBox = {
-  marginTop: "auto",
+  position: "relative",
+  zIndex: 1,
 };
 
 const endpoint = {
   display: "block",
-  background: "#f1f5f9",
+  background: "#020617",
   padding: "10px",
   borderRadius: "8px",
   marginBottom: "15px",
-  fontSize: "13px",
+  fontSize: "12px",
+  color: "#38bdf8",
 };
 
 const btn = {
   width: "100%",
   padding: "12px",
+  borderRadius: "10px",
+  border: "none",
+  fontWeight: "bold",
+  cursor: "pointer",
   background: "#2563eb",
   color: "white",
-  border: "none",
-  borderRadius: "10px",
-  cursor: "pointer",
-  fontWeight: "bold",
+};
+
+const silverBtn = {
+  background: "#64748b",
+};
+
+const goldBtn = {
+  background: "linear-gradient(90deg, #f59e0b, #fbbf24)",
 };
 
 export default APIProducts;

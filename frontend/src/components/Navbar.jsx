@@ -42,7 +42,7 @@ const Navbar = () => {
       justifyContent: 'space-between', 
       alignItems: 'center', 
       padding: '15px 60px', 
-      backgroundColor: '#0047AB', 
+      backgroundColor: '#571e79', 
       color: 'white',
       fontFamily: 'serif' 
     }}>

@@ -128,7 +128,7 @@ const ApiPlayground = () => {
 const page = {
   fontFamily: "sans-serif",
   padding: "50px",
-  background: "#f8fafc",
+  background: "#c6ccd1",
   minHeight: "100vh",
 };
 

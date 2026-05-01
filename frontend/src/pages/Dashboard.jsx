@@ -61,18 +61,15 @@ const Dashboard = () => {
   const percent = Math.min((usage / limit) * 100, 100);
 
   return (
-    <div style={{ backgroundColor: '#f8faff', minHeight: '100vh', padding: '40px 20px', fontFamily: 'sans-serif' }}>
+    <div style={{ backgroundColor: '#c3c5ca', minHeight: '100vh', padding: '40px 20px', fontFamily: 'sans-serif' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ marginBottom: '30px' }}>
-          <span style={{ backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
-            Overview
-          </span>
           <h1 style={{ fontSize: '32px', margin: '10px 0 5px 0', color: '#1e293b', fontWeight: 'bold' }}>
             Course API Dashboard
           </h1>
-          <p style={{ color: '#64748b', fontSize: '14px' }}>
+          <p style={{ color: '#0b0c0c', fontSize: '14px' }}>
             ยินดีต้อนรับคุณ {user.name} | ติดตามสถานะการใช้งานและจัดการแพ็กเกจของคุณ
           </p>
         </div>
@@ -87,7 +84,7 @@ const Dashboard = () => {
           <StatCard title="Current Plan" value={displayStatus} />
           <StatCard title="Requests Used" value={usage} />
           <StatCard title="Remaining Quota" value={remaining} />
-          <StatCard title="Account Owner" value={user.email} isEmail />
+          <StatCard title="Account Owner" value={user.name}  />
         </div>
 
         {/* Main */}
